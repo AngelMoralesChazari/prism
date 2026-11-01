@@ -161,7 +161,7 @@ public final class PrismRegressionHarness {
             }
         }
         if (fallos == 0) {
-            System.out.println("PrismRegressionHarness: OK (" + casos.size() + " casos LN + diagnóstico .lgs).");
+            System.out.println("PrismRegressionHarness: OK (" + casos.size() + " casos LN + diagnóstico .pr).");
         } else {
             System.err.println("PrismRegressionHarness: " + fallos + " fallo(s).");
             System.exit(1);
@@ -173,7 +173,7 @@ public final class PrismRegressionHarness {
         String invalido = "lemma sin flecha\n";
         ResultadoCargaLgs r = LgsCargador.cargarConDiagnostico(
                 new ByteArrayInputStream(invalido.getBytes(StandardCharsets.UTF_8)),
-                "test-invalido.lgs");
+                "test-invalido.pr");
         if (!r.bloqueaTraduccion() || r.estado() != EstadoCargaLgs.ERROR_SINTAXIS) {
             fallos++;
             System.err.println("FALLO [lgs_sintaxis]: se esperaba ERROR_SINTAXIS bloqueante");
@@ -189,7 +189,7 @@ public final class PrismRegressionHarness {
         String invalido = "lexrule sufijo o infinitivo xyz\n";
         ResultadoCargaLgs mal = LgsCargador.cargarConDiagnostico(
                 new ByteArrayInputStream(invalido.getBytes(StandardCharsets.UTF_8)),
-                "test-lexrule-invalido.lgs");
+                "test-lexrule-invalido.pr");
         if (!mal.bloqueaTraduccion() || mal.estado() != EstadoCargaLgs.ERROR_SINTAXIS) {
             fallos++;
             System.err.println("FALLO [lexrule_sintaxis]: se esperaba ERROR_SINTAXIS bloqueante");

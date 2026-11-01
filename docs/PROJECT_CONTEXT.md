@@ -19,8 +19,8 @@ Separación deliberada:
 | Capa | Formato | Rol |
 |------|---------|-----|
 | Programas | `.pr` | Sintaxis del lenguaje (module, let, vertauto, …) |
-| Conocimiento léxico | `.lgs` | Lemas, lexrules, patterns (p. ej. `core.lgs`) |
-| Motor | Java 25 | Interpreta `.pr`, carga `.lgs`, construye IR, evalúa |
+| Conocimiento léxico | `.pr` | Lemas, lexrules, patterns (`core.pr`) |
+| Motor | Java 25 | Interpreta `.pr`, carga recursos `.pr`, construye IR, evalúa |
 
 **No es** una aplicación web, ni un ORM, ni un framework fullstack. Es un **runtime de lenguaje + herramientas CLI** sobre la JVM.
 
@@ -43,7 +43,7 @@ Separación deliberada:
 ### No implementado (roadmap)
 
 - `prc compile` → bytecode / `.class` por módulo
-- `translate(x, modulo)` con `.lgs` distinto de `core`
+- `translate(x, modulo)` con archivo léxico `.pr` distinto de `core`
 - Constructos `rule` / `run`
 - Import de otros `.pr`
 - Diagnósticos LSP en tiempo real
@@ -95,12 +95,12 @@ IR proposicional: `LogicExpr` y nodos (`AtomExpr`, `NegExpr`, `AndExpr`, `OrExpr
 |------------|-----|
 | `nlp.normalizacion` | Normalizar texto de entrada |
 | `nlp.lexer` | Tokens NL (`SI`, `LITERAL`, …) |
-| `nlp.lexicon` | Carga `.lgs`, lemas, lexrules, morfología |
+| `nlp.lexicon` | Carga léxico `.pr`, lemas, lexrules, morfología |
 | `nlp.semantica` | `SemanticMapper` (patrones → IR) |
 
 ### 3.6 Recursos y ejemplos
 
-- `src/main/resources/prism/core.lgs` — léxico/patrones por defecto  
+- `src/main/resources/prism/core.pr` — léxico/patrones por defecto  
 - `examples/*.pr` — programas ejecutables (`ejercicio_lluvia.pr`, `translate_literal.pr`, …)  
 - `extensions/prism/` — editor, no runtime  
 - `tooling/vscode/` — tareas check/run/compile (copiar a `.vscode/`)
@@ -111,7 +111,7 @@ IR proposicional: `LogicExpr` y nodos (`AtomExpr`, `NegExpr`, `AndExpr`, `OrExpr
 
 1. **`module` ↔ archivo:** el identificador de `module` debe coincidir con el nombre del `.pr` (sin extensión). `prc check` y `prc run` lo validan.
 2. **Un `module` por archivo;** `use` solo conoce `core` en v1 del intérprete.
-3. **`translate`:** entrada Text (literal o variable `nl`); salida Formula (cadena clásica + pasos). Usa `core.lgs` vía el engine.
+3. **`translate`:** entrada Text (literal o variable `nl`); salida Formula (cadena clásica + pasos). Usa `core.pr` vía el engine.
 4. **`atom`:** no es solo documentación; alimenta etiquetas de proposiciones en `vertauto` cuando hay registro de átomos.
 5. **`formula`:** solo puede referenciar átomos **declarados** (validador).
 6. **Redeclaración** del mismo identificador → error.
@@ -178,6 +178,6 @@ Al añadir capacidades del lenguaje o snippets, actualizar este contexto y el do
 |--------|--------|
 | Lenguaje `.pr` usable | ✅ Intérprete + check |
 | Compilación a JVM | ❌ Pendiente |
-| Lexicón declarativo `.lgs` | ✅ `core.lgs` + cargador |
+| Lexicón declarativo `.pr` | ✅ `core.pr` + cargador |
 | Extensión de editor | ✅ Básica (highlight + snippets) |
 | Tooling Maven | ✅ Operativo (`pom.xml`) |

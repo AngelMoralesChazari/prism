@@ -70,7 +70,7 @@ public final class LgsCargador {
     }
 
     /**
-     * Carga lemas y patrones desde el classpath, p. ej. {@code prism/core.lgs}.
+     * Carga lemas y patrones desde el classpath, p. ej. {@code prism/core.pr}.
      * Si el recurso no existe o hay error, devuelve {@link ContenidoLgs#vacio()} sin mensaje
      * (uso legacy; el motor usa {@link #cargarConDiagnostico(String)}).
      */

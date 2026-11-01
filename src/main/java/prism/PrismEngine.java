@@ -18,10 +18,10 @@ import nlp.semantica.SemanticMapper;
 
 /**
  * Orquesta normalización → lexemas (diagnóstico) → patrones → IR → emisión de fórmula.
- * Patrones semánticos: declarativos en {@code prism/core.lgs} o respaldo embebido en {@link SemanticMapper}.
+ * Patrones semánticos: declarativos en {@code prism/core.pr} o respaldo embebido en {@link SemanticMapper}.
  */
 public class PrismEngine {
-    private static final String RECURSO_LGS = "prism/core.lgs";
+    private static final String RECURSO_LGS = "prism/core.pr";
 
     private final NormalizadorTexto normalizador = new NormalizadorTexto();
     private final NaturalLexer lexer = new NaturalLexer();

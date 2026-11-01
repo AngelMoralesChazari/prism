@@ -12,7 +12,7 @@ alwaysApply: true
 | Runtime | **Java 17+ / 25** | Build con Maven (`pom.xml`) o `compile.ps1` → `out/` |
 | Dependencias | **Ninguna externa en runtime** | Solo JDK estándar |
 | Lenguaje fuente usuario | **`.pr`** | Programas Prism (intérprete) |
-| Datos léxicos | **`.lgs`** | `src/main/resources/prism/core.lgs` (v0.6) |
+| Datos léxicos | **`.pr`** | `src/main/resources/prism/core.pr` (v0.6) |
 | Editor | Extensión VS Code/Cursor | `extensions/prism/` (TextMate + snippets) |
 | Frontend / BD / Node app | **No existen** | No hay app web ni base de datos |
 
@@ -40,8 +40,8 @@ Prism/
 │   │   ├── pr/               # Intérprete .pr: lexer, parser, AST, PrcCli
 │   │   │   └── ast/          # Nodos PrStmt / FormulaExpr
 │   │   └── vertauto/         # Evaluación, tabla de verdad, CLI vertauto
-│   └── nlp/                  # NL: normalización, lexer, léxico .lgs, SemanticMapper
-├── src/main/resources/prism/core.lgs
+│   └── nlp/                  # NL: normalización, lexer, léxico .pr, SemanticMapper
+├── src/main/resources/prism/core.pr
 ├── examples/                 # Programas .pr ejecutables
 ├── extensions/prism/         # Extensión editor (no es runtime)
 ├── tooling/vscode/           # tasks.json plantilla (copiar a .vscode/)

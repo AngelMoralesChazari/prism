@@ -9,7 +9,7 @@ import java.util.Set;
 /**
  * Normalización morfológica heurística del español (Fase A/C del léxico Prism).
  * <p>
- * Fase A: reglas embebidas en Java. Fase C: reglas declarativas en {@code core.lgs} vía {@code lexrule};
+ * Fase A: reglas embebidas en Java. Fase C: reglas declarativas en {@code core.pr} vía {@code lexrule};
  * si el archivo no declara ninguna, se usan las reglas predeterminadas embebidas.
  * <p>
  * Documentación: {@code docs/Prism/Lexrule.md}

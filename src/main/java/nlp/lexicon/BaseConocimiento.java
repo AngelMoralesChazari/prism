@@ -16,7 +16,7 @@ import java.util.Objects;
  */
 
 public class BaseConocimiento {
-    private static final String RECURSO_LEMAS = "prism/core.lgs";
+    private static final String RECURSO_LEMAS = "prism/core.pr";
 
     private final Map<String, String> lemas = new HashMap<>();
     private final NormalizadorMorfologico normalizadorMorfologico;
@@ -69,7 +69,7 @@ public class BaseConocimiento {
         return normalizadorMorfologico.normalizar(palabra);
     }
 
-    /** Respaldo si {@code core.lgs} no está en el classpath (p. ej. compilación sin copiar {@code resources}). */
+    /** Respaldo si {@code core.pr} no está en el classpath (p. ej. compilación sin copiar {@code resources}). */
     private void registrarLemasIniciales() {
         lemas.put("llueve", "llover");
         lemas.put("llueva", "llover");

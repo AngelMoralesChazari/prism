@@ -16,7 +16,7 @@ import nlp.lexicon.TipoSalidaIrPatron;
 
 /**
  * Traduce secuencias léxicas de lenguaje natural a la IR de Prism.
- * Los patrones se cargan desde {@code prism/core.lgs} (directiva {@code pattern});
+ * Los patrones se cargan desde {@code prism/core.pr} (directiva {@code pattern});
  * si el archivo no declara ninguno, se usan los patrones MVP embebidos en código.
  */
 public class SemanticMapper {

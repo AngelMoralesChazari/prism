@@ -14,7 +14,7 @@
   "use core": {
     "scope": "prism",
     "prefix": ["use", "usecore"],
-    "description": "Importar módulo léxico core.lgs",
+    "description": "Importar módulo léxico core.pr",
     "body": ["use core"]
   },
   "atom": {

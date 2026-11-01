@@ -13,7 +13,7 @@ Prism es un **lenguaje declarativo** (archivos `.pr`) para lógica proposicional
 ## Stack (no inventar)
 
 - Java, `compile.ps1` → carpeta `out/`
-- Datos: `.lgs` (`core.lgs`)
+- Datos léxicos: `core.pr` (`src/main/resources/prism/core.pr`)
 - Extensión editor opcional: `extensions/prism/`
 - **No** hay React/Node/SQL en el motor
 
