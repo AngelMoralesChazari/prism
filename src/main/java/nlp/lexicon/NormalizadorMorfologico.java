@@ -281,7 +281,8 @@ public final class NormalizadorMorfologico {
 
     /**
      * Determina si dos cláusulas o proposiciones son semánticamente equivalentes
-     * permitiendo que los verbos conjugados alternen entre modo indicativo y subjuntivo.
+     * permitiendo que los verbos conjugados alternen entre modo indicativo y subjuntivo,
+     * elisiones de sujeto en predicados coordinados o reducción anafórica de complementos del nombre.
      */
     public static boolean sonFrasesEquivalentes(String f1, String f2) {
         if (f1 == null || f2 == null) {
@@ -299,16 +300,34 @@ public final class NormalizadorMorfologico {
             return true;
         }
 
+        // Sujeto elíptico compartido en predicados coordinados (p. ej. "permanece estable" <-> "cluster permanece estable")
         if (s1.length() >= 5 && s2.length() >= 5 && (s1.endsWith(" " + s2) || s2.endsWith(" " + s1))) {
             return true;
         }
 
         String[] p1 = s1.split(" ");
         String[] p2 = s2.split(" ");
+        if (sonPalabrasEquivalentes(p1, p2)) {
+            return true;
+        }
+
+        // Reducción anafórica del complemento del nombre (p. ej. "token de autenticacion expira" <-> "token expire")
+        String patronDe = "\\b(?:de|del)\\s+(?:(?:el|la|los|las|un|una|unos|unas)\\s+)?[\\w]+\\b";
+        String red1 = s1.replaceAll(patronDe, " ").replaceAll("\\s+", " ").trim();
+        String red2 = s2.replaceAll(patronDe, " ").replaceAll("\\s+", " ").trim();
+        if (!red1.equals(s1) || !red2.equals(s2)) {
+            if (sonPalabrasEquivalentes(red1.split(" "), red2.split(" "))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean sonPalabrasEquivalentes(String[] p1, String[] p2) {
         if (p1.length != p2.length) {
             return false;
         }
-
         int diferencias = 0;
         for (int i = 0; i < p1.length; i++) {
             if (p1[i].equals(p2[i])) {
@@ -320,7 +339,6 @@ public final class NormalizadorMorfologico {
                 return false;
             }
         }
-
-        return diferencias >= 1 && diferencias <= 2;
+        return diferencias <= 2;
     }
 }

@@ -2,11 +2,10 @@ module prueba_nl
 
 use core
 
-atom p = "el clúster permanece estable"
-atom q = "los nodos sincronizan"
-atom r = "el clúster experimenta latencia"
+atom p = "El balanceador de carga redirige el tráfico"
+atom q = "El servidor web procesa la solicitud"
 
-nl premisa = "El clúster permanece estable si y solo si los nodos sincronizan; sin embargo, si los nodos no sincronizan entonces el clúster experimenta latencia o permanece estable."
+nl premisa = "Si el balanceador de carga redirige el tráfico entonces el servidor web procesa la solicitud, y el balanceador de carga redirige el tráfico; pero no es verdad que el servidor web procese la solicitud."
 let equivalencia = translate(premisa)
 
 vertauto equivalencia {
