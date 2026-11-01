@@ -62,7 +62,8 @@ public final class NaturalLexer {
             int j = finLiteral(s, i);
             String lit = s.substring(i, j).trim();
             if (!lit.isEmpty()) {
-                agregarLiterales(salida, lit);
+                boolean delimitadoExplicito = (j < n && s.charAt(j) == ',') || hayEntoncesSiguiente(s, j);
+                agregarLiterales(salida, lit, delimitadoExplicito);
             }
             i = j;
         }
@@ -71,11 +72,12 @@ public final class NaturalLexer {
 
     /**
      * Tras {@code si}, frases elípticas (*si estudio apruebo*) se parten en un literal por palabra
-     * si no hay conectores internos; tras {@code entonces} los complementos multi-palabra siguen
-     * siendo un solo literal (*llevo paraguas*).
+     * solo cuando no hay delimitación explícita (coma o {@code entonces}); en condicionales explícitos,
+     * el antecedente multi-palabra se preserva íntegro.
      */
-    private static void agregarLiterales(List<TokenNatural> salida, String lit) {
-        if ((ultimoTokenPermiteElipsis(salida) || ultimoTokenParteLiteralEnPalabras(salida))
+    private static void agregarLiterales(List<TokenNatural> salida, String lit, boolean delimitadoExplicito) {
+        if (!delimitadoExplicito
+                && (ultimoTokenPermiteElipsis(salida) || ultimoTokenParteLiteralEnPalabras(salida))
                 && literalSinConectoresInternos(lit)) {
             List<String> palabras = fusionarPrefijosNo(lit.split("\\s+"));
             if (ultimoTokenPermiteElipsis(salida) && palabras.size() >= 3) {
@@ -93,6 +95,28 @@ public final class NaturalLexer {
             return;
         }
         salida.add(new TokenNatural(TipoTokenNatural.LITERAL, lit));
+    }
+
+    private static boolean hayEntoncesSiguiente(String s, int j) {
+        int n = s.length();
+        int k = j;
+        while (k < n) {
+            int[] kw = encontrarPalabraClave(s, k);
+            if (kw != null) {
+                TipoTokenNatural tipo = TIPOS[kw[1]];
+                if (tipo == TipoTokenNatural.ENTONCES) {
+                    return true;
+                }
+                if (tipo == TipoTokenNatural.SI || tipo == TipoTokenNatural.SI_Y_SOLO_SI
+                        || tipo == TipoTokenNatural.SIEMPRE_QUE || tipo == TipoTokenNatural.CUANDO) {
+                    return false;
+                }
+                k = kw[0];
+            } else {
+                k++;
+            }
+        }
+        return false;
     }
 
     /** Tras {@code y}/{@code o} dentro de un bloque {@code si …} sin {@code entonces}, cada palabra es un literal. */

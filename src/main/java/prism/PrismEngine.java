@@ -5,7 +5,9 @@ import java.util.List;
 import prism.ir.AndExpr;
 import prism.ir.AtomExpr;
 import prism.ir.EmitidorFormula;
+import prism.ir.EquivExpr;
 import prism.ir.LogicExpr;
+import prism.ir.OrExpr;
 import nlp.lexer.NaturalLexer;
 import nlp.lexer.TokenNatural;
 import nlp.lexicon.BaseConocimiento;
@@ -54,26 +56,11 @@ public class PrismEngine {
         List<TokenNatural> lexemas = lexer.tokenizar(texto);
         pasosDeAnalisis.add("Lexemas LN: " + lexemas);
 
-        List<String> segmentos = segmentosCompuestos(texto);
-        if (segmentos.isEmpty()) {
+        LogicExpr expresionFinal = traducirJerarquico(texto, pasosDeAnalisis);
+        if (expresionFinal == null) {
             return PrismResult.error(
                     "No pude mapear el enunciado a una forma lógica con las reglas actuales.",
                     pasosDeAnalisis);
-        }
-        if (segmentos.size() > 1) {
-            pasosDeAnalisis.add("Composición: " + segmentos.size() + " bloques unidos por conjunción (∧).");
-        }
-
-        LogicExpr expresionFinal = null;
-        for (int i = 0; i < segmentos.size(); i++) {
-            pasosDeAnalisis.add("Bloque " + (i + 1) + ": " + segmentos.get(i));
-            LogicExpr bloque = traducirBloque(segmentos.get(i), pasosDeAnalisis);
-            if (bloque == null) {
-                return PrismResult.error(
-                        "No pude mapear el enunciado a una forma lógica con las reglas actuales.",
-                        pasosDeAnalisis);
-            }
-            expresionFinal = expresionFinal == null ? bloque : new AndExpr(expresionFinal, bloque);
         }
 
         String formula = EmitidorFormula.emitir(expresionFinal, registro, pasosDeAnalisis);
@@ -82,6 +69,75 @@ public class PrismEngine {
                 "Traducción Prism completada.",
                 pasosDeAnalisis,
                 registro.mapaParaResultado());
+    }
+
+    private LogicExpr traducirJerarquico(String texto, List<String> pasosDeAnalisis) {
+        String limpio = limpiarSegmento(texto);
+        if (limpio.isEmpty()) {
+            return null;
+        }
+
+        // 1. Conector mayor: bicondicional "si y solo si"
+        int idxIff = encontrarConectorMayor(limpio, "si y solo si");
+        if (idxIff >= 0) {
+            String izqTexto = limpiarSegmento(limpio.substring(0, idxIff));
+            String derTexto = limpiarSegmento(limpio.substring(idxIff + "si y solo si".length()));
+            if (!izqTexto.isEmpty() && !derTexto.isEmpty()) {
+                pasosDeAnalisis.add("Jerarquía: bicondicional (↔) conectando dos cláusulas.");
+                LogicExpr izq = traducirJerarquico(izqTexto, pasosDeAnalisis);
+                LogicExpr der = traducirJerarquico(derTexto, pasosDeAnalisis);
+                if (izq != null && der != null) {
+                    return new EquivExpr(izq, der);
+                }
+            }
+        }
+
+        // 2. Composición de cláusulas condicionales separadas por coma
+        List<String> segmentos = segmentosCompuestos(limpio);
+        if (segmentos.size() > 1) {
+            pasosDeAnalisis.add("Composición: " + segmentos.size() + " bloques unidos por conjunción (∧).");
+            LogicExpr acumulada = null;
+            for (int i = 0; i < segmentos.size(); i++) {
+                pasosDeAnalisis.add("Bloque " + (i + 1) + ": " + segmentos.get(i));
+                LogicExpr bloque = traducirJerarquico(segmentos.get(i), pasosDeAnalisis);
+                if (bloque == null) {
+                    return null;
+                }
+                acumulada = acumulada == null ? bloque : new AndExpr(acumulada, bloque);
+            }
+            return acumulada;
+        }
+
+        // 3. Cláusula base (mapeo léxico-semántico)
+        return traducirBloque(limpio, pasosDeAnalisis);
+    }
+
+    private static int encontrarConectorMayor(String s, String conector) {
+        int idx = s.indexOf(conector);
+        while (idx >= 0) {
+            boolean validoAntes = (idx == 0 || Character.isWhitespace(s.charAt(idx - 1)) || s.charAt(idx - 1) == ',');
+            int fin = idx + conector.length();
+            boolean validoDespues = (fin == s.length() || Character.isWhitespace(s.charAt(fin)) || s.charAt(fin) == ',');
+            if (validoAntes && validoDespues) {
+                return idx;
+            }
+            idx = s.indexOf(conector, idx + 1);
+        }
+        return -1;
+    }
+
+    private static String limpiarSegmento(String s) {
+        if (s == null) {
+            return "";
+        }
+        String r = s.trim();
+        while (r.startsWith(",") || r.startsWith(";")) {
+            r = r.substring(1).trim();
+        }
+        while (r.endsWith(",") || r.endsWith(";")) {
+            r = r.substring(0, r.length() - 1).trim();
+        }
+        return r;
     }
 
     private LogicExpr traducirBloque(String bloque, List<String> pasosDeAnalisis) {

@@ -139,6 +139,11 @@ public final class PrismRegressionHarness {
                 "cuando llueve llevo paraguas, si estudio apruebo",
                 true,
                 "((p " + IMP + " q) " + AND + " (r " + IMP + " s))"));
+        casos.add(new Caso(
+                "equivalencia_implicaciones_contrapositivas",
+                "si el proceso no libera la memoria entonces el sistema colapsa si y solo si si el sistema no colapsa entonces el proceso libera la memoria",
+                true,
+                "((\u00acp " + IMP + " q) " + IFF + " (\u00acq " + IMP + " p))"));
         casos.add(new Caso("vacio", "", false, ""));
         casos.add(new Caso("solo_espacios", "   \t  ", false, ""));
 

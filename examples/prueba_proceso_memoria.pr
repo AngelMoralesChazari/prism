@@ -1,0 +1,18 @@
+# Prism v1.0 — caso de estudio: equivalencia lógica de implicaciones contrapositivas
+# Ejecutar: java -jar prism.jar run examples/prueba_proceso_memoria.pr
+
+module prueba_proceso_memoria
+
+use core
+
+atom p = "proceso liberar la memoria"
+atom q = "sistema colapsar"
+
+nl premisa = "si el proceso no libera la memoria entonces el sistema colapsa si y solo si si el sistema no colapsa entonces el proceso libera la memoria"
+let equivalencia = translate(premisa)
+
+vertauto equivalencia {
+    steps
+    table
+    verdict
+}

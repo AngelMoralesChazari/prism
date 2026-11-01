@@ -4,7 +4,7 @@
 version 0.6
 
 # --- Morfología declarativa (orden = prioridad; primera coincidencia gana) ---
-lexrule excluir gorra sombrero paraguas calor frio sol cielo nube nubes lluvia examen clase
+lexrule excluir gorra sombrero paraguas calor frio sol cielo nube nubes lluvia examen clase proceso sistema memoria datos red archivo servidor usuario
 
 lexrule sufijo iaria infinitivo ar
 lexrule sufijo aria infinitivo ar

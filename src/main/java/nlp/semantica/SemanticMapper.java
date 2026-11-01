@@ -313,6 +313,9 @@ public class SemanticMapper {
         if (limpio.startsWith("no ")) {
             negada = true;
             limpio = limpio.substring(3).trim();
+        } else if (limpio.matches(".*\\bno\\b.*")) {
+            negada = true;
+            limpio = limpio.replaceFirst("\\bno\\s+", "").trim();
         }
         String canonico = baseConocimiento.canonicalizarFragmento(limpio);
         return new AtomExpr(canonico.isBlank() ? limpio : canonico, negada);
