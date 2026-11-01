@@ -1,0 +1,30 @@
+package prism.pr;
+
+public enum PrTokenType {
+    MODULE,
+    USE,
+    ATOM,
+    FORMULA,
+    NL,
+    LET,
+    TRANSLATE,
+    VERTAUTO,
+    NOT,
+    AND,
+    OR,
+    IMPL,
+    IFF,
+    STEPS,
+    TABLE,
+    VERDICT,
+    IDENT,
+    STRING,
+    LPAREN,
+    RPAREN,
+    LBRACE,
+    RBRACE,
+    EQ,
+    COLON,
+    COMMA,
+    EOF
+}
