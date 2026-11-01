@@ -18,7 +18,8 @@ public final class NormalizadorTexto {
         }
         t = Normalizer.normalize(t, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         t = t.replaceAll("[;:]+", ",");
-        t = t.replaceAll("\\s+", " ");
+        t = t.replaceAll("[.!?]+$", "");
+        t = t.replaceAll("\\s+", " ").trim();
         return t;
     }
 }

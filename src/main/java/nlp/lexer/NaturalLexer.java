@@ -14,16 +14,25 @@ public final class NaturalLexer {
             "no es verdad que ",
             "en caso de que ",
             "si y solo si ",
+            " sin embargo ",
+            " no obstante ",
+            "sin embargo ",
+            "no obstante ",
             "a menos que ",
             "siempre que ",
             "puesto que ",
+            "entonces ",
             "dado que ",
             "solo si ",
-            "ya que ",
             " o bien ",
+            " aunque ",
             "o bien ",
-            "entonces ",
+            "ya que ",
+            "aunque ",
+            " pero ",
             "cuando ",
+            "pero ",
+            " mas ",
             "si ",
             " y ",
             " o ",
@@ -36,16 +45,25 @@ public final class NaturalLexer {
             TipoTokenNatural.NO_ES_CIERTO_QUE,
             TipoTokenNatural.EN_CASO_DE_QUE,
             TipoTokenNatural.SI_Y_SOLO_SI,
+            TipoTokenNatural.Y,
+            TipoTokenNatural.Y,
+            TipoTokenNatural.Y,
+            TipoTokenNatural.Y,
             TipoTokenNatural.A_MENOS_QUE,
             TipoTokenNatural.SIEMPRE_QUE,
             TipoTokenNatural.PUESTO_QUE,
+            TipoTokenNatural.ENTONCES,
             TipoTokenNatural.DADO_QUE,
             TipoTokenNatural.SOLO_SI,
+            TipoTokenNatural.O_BIEN,
+            TipoTokenNatural.Y,
+            TipoTokenNatural.O_BIEN,
             TipoTokenNatural.YA_QUE,
-            TipoTokenNatural.O_BIEN,
-            TipoTokenNatural.O_BIEN,
-            TipoTokenNatural.ENTONCES,
+            TipoTokenNatural.Y,
+            TipoTokenNatural.Y,
             TipoTokenNatural.CUANDO,
+            TipoTokenNatural.Y,
+            TipoTokenNatural.Y,
             TipoTokenNatural.SI,
             TipoTokenNatural.Y,
             TipoTokenNatural.O,
@@ -73,14 +91,15 @@ public final class NaturalLexer {
                 continue;
             }
             char c = s.charAt(i);
-            if (c == ' ' || c == ',') {
+            if (c == ' ' || c == ',' || c == '.' || c == ';') {
                 i++;
                 continue;
             }
             int j = finLiteral(s, i);
-            String lit = s.substring(i, j).trim();
+            String lit = s.substring(i, j).trim().replaceAll("^[.,;:!?]+", "").replaceAll("[.,;:!?]+$", "").trim();
             if (!lit.isEmpty()) {
-                boolean delimitadoExplicito = (j < n && s.charAt(j) == ',') || hayEntoncesSiguiente(s, j);
+                boolean delimitadoExplicito = (j < n && (s.charAt(j) == ',' || s.charAt(j) == '.' || s.charAt(j) == ';'))
+                        || hayEntoncesSiguiente(s, j);
                 agregarLiterales(salida, lit, delimitadoExplicito);
             }
             i = j;
@@ -243,7 +262,8 @@ public final class NaturalLexer {
         int n = s.length();
         int j = i;
         while (j < n) {
-            if (s.charAt(j) == ',') {
+            char c = s.charAt(j);
+            if (c == ',' || c == '.' || c == ';') {
                 break;
             }
             if (encontrarPalabraClave(s, j) != null) {
