@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "*.pr": "prism"
+  },
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true
+}

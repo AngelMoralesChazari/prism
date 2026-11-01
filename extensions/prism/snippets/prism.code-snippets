@@ -1,0 +1,161 @@
+{
+  "Programa Prism (module + use core)": {
+    "scope": "prism",
+    "prefix": ["prprog", "lsprog", "programa", "prog"],
+    "description": "Esqueleto de programa: module (nombre = archivo) + use core",
+    "body": [
+      "module ${1:${TM_FILENAME_BASE}}",
+      "",
+      "use core",
+      "",
+      "$0"
+    ]
+  },
+  "use core": {
+    "scope": "prism",
+    "prefix": ["use", "usecore"],
+    "description": "Importar módulo léxico core.lgs",
+    "body": ["use core"]
+  },
+  "atom": {
+    "scope": "prism",
+    "prefix": ["atom"],
+    "description": "Declarar átomo proposicional con etiqueta NL",
+    "body": ["atom ${1:p} = \"${2:etiqueta}\""]
+  },
+  "nl (texto natural)": {
+    "scope": "prism",
+    "prefix": ["nl"],
+    "description": "Declarar texto en lenguaje natural",
+    "body": ["nl ${1:nombre} = \"${2:texto natural}\""]
+  },
+  "let translate (variable nl)": {
+    "scope": "prism",
+    "prefix": ["lettr", "translate", "lettranslate"],
+    "description": "let f = translate(variable_nl)",
+    "body": ["let ${1:f} = translate(${2:variable_nl})"]
+  },
+  "let translate (literal)": {
+    "scope": "prism",
+    "prefix": ["lettrl", "translatelit"],
+    "description": "let f = translate(\"texto literal\")",
+    "body": ["let ${1:f} = translate(\"${2:si estudio apruebo}\")"]
+  },
+  "formula": {
+    "scope": "prism",
+    "prefix": ["formula", "form"],
+    "description": "Declarar fórmula simbólica",
+    "body": ["formula ${1:f} = ${2:p impl q}"]
+  },
+  "fórmula implicación": {
+    "scope": "prism",
+    "prefix": ["impl", "implica"],
+    "description": "formula f = p impl q",
+    "body": ["formula ${1:f} = ${2:p} impl ${3:q}"]
+  },
+  "tautología p or not p": {
+    "scope": "prism",
+    "prefix": ["tauto", "tautologia"],
+    "description": "Tautología clásica p or not p",
+    "body": [
+      "atom ${1:p} = \"${2:proposicion}\"",
+      "formula ${3:tautologia} = ${1:p} or not ${1:p}",
+      "vertauto ${3:tautologia} { steps table verdict }"
+    ]
+  },
+  "contradicción p and not p": {
+    "scope": "prism",
+    "prefix": ["contra", "contradiccion"],
+    "description": "Contradicción p and not p",
+    "body": [
+      "atom ${1:p} = \"${2:proposicion}\"",
+      "formula ${3:f} = ${1:p} and not ${1:p}",
+      "vertauto ${3:f} { steps table verdict }"
+    ]
+  },
+  "vertauto modo corto": {
+    "scope": "prism",
+    "prefix": ["vertauto", "va"],
+    "description": "vertauto f (una línea: fórmula + dictamen)",
+    "body": ["vertauto ${1:f}"]
+  },
+  "vertauto extendido": {
+    "scope": "prism",
+    "prefix": ["vax", "vertautoext", "vertauto-full"],
+    "description": "vertauto f { steps table verdict }",
+    "body": [
+      "vertauto ${1:f} {",
+      "    steps",
+      "    table",
+      "    verdict",
+      "}"
+    ]
+  },
+  "ejercicio NL con translate literal": {
+    "scope": "prism",
+    "prefix": ["prnlit", "lsnlit", "ejercicionllit"],
+    "description": "NL directo: translate(\"literal\") sin nl intermedio",
+    "body": [
+      "module ${1:${TM_FILENAME_BASE}}",
+      "",
+      "use core",
+      "",
+      "atom ${2:p} = \"${3:antecedente}\"",
+      "atom ${4:q} = \"${5:consecuente}\"",
+      "",
+      "let ${6:implicacion} = translate(\"${7:si estudio apruebo}\")",
+      "",
+      "vertauto ${6:implicacion} {",
+      "    steps",
+      "    table",
+      "    verdict",
+      "}",
+      "$0"
+    ]
+  },
+  "ejercicio NL → translate → vertauto": {
+    "scope": "prism",
+    "prefix": ["prnl", "lsnl", "ejercicionl", "nlex"],
+    "description": "Patrón completo: átomos + nl + translate + vertauto extendido",
+    "body": [
+      "module ${1:${TM_FILENAME_BASE}}",
+      "",
+      "use core",
+      "",
+      "atom ${2:p} = \"${3:antecedente}\"",
+      "atom ${4:q} = \"${5:consecuente}\"",
+      "",
+      "nl ${6:linea} = \"${7:si p entonces q}\"",
+      "let ${8:implicacion} = translate(${6:linea})",
+      "",
+      "vertauto ${8:implicacion} {",
+      "    steps",
+      "    table",
+      "    verdict",
+      "}",
+      "$0"
+    ]
+  },
+  "ejercicio fórmula simbólica": {
+    "scope": "prism",
+    "prefix": ["prform", "lsform", "ejercicioform"],
+    "description": "Patrón: átomos + formula + vertauto extendido",
+    "body": [
+      "module ${1:${TM_FILENAME_BASE}}",
+      "",
+      "use core",
+      "",
+      "atom ${2:p} = \"${3:proposicion_a}\"",
+      "atom ${4:q} = \"${5:proposicion_b}\"",
+      "",
+      "formula ${6:f} = ${2:p} impl ${4:q}",
+      "",
+      "vertauto ${6:f} {",
+      "    steps",
+      "    table",
+      "    verdict",
+      "}",
+      "$0"
+    ]
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "prism",
+  "displayName": "Prism",
+  "description": "Resaltado de sintaxis y snippets para archivos Prism (.pr)",
+  "version": "0.2.0",
+  "publisher": "prism",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "prism",
+        "aliases": ["Prism", "prism"],
+        "extensions": [".pr"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "prism",
+        "scopeName": "source.prism",
+        "path": "./syntaxes/prism.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "prism",
+        "path": "./snippets/prism.code-snippets"
+      }
+    ]
+  }
+}
