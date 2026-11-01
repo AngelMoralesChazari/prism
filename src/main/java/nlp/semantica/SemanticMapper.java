@@ -339,6 +339,13 @@ public class SemanticMapper {
             negada = true;
             limpio = limpio.replaceFirst("\\bno\\s+", "").trim();
         }
+
+        BaseConocimiento.ResultadoAntonimo resAnt = baseConocimiento.detectarYReemplazarAntonimo(limpio);
+        if (resAnt.esAntonimo()) {
+            negada = !negada;
+            limpio = resAnt.textoPositivo();
+        }
+
         String canonico = baseConocimiento.canonicalizarFragmento(limpio);
         return new AtomExpr(canonico.isBlank() ? limpio : canonico, negada);
     }
