@@ -1,0 +1,19 @@
+out/
+target/
+*.jar
+*.vsix
+errores.txt
+TautoTeacher2.0/
+.idea/
+.vscode/
+.VSCodeCounter/
+*.iml
+.DS_Store
+
+# Documentación local larga (no versionar en el remoto)
+documentacion Prism/
+documentacion LogicScript/
+
+# docs/ versiona solo el contexto del proyecto; el resto de docs locales puede ignorarse
+docs/*
+!docs/PROJECT_CONTEXT.md
