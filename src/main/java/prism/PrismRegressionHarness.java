@@ -158,6 +158,36 @@ public final class PrismRegressionHarness {
                 "si el socket falla entonces el servido reinicia",
                 true,
                 "(p " + IMP + " q)"));
+        casos.add(new Caso(
+                "adversativa_pero_simple",
+                "estudio pero no apruebo",
+                true,
+                "(p " + AND + " \u00acq)"));
+        casos.add(new Caso(
+                "adversativa_con_antonimo_contradiccion",
+                "el microservicio responde con exito si y solo si la base de datos esta activa, pero el microservicio responde con exito y la base de datos esta inactiva",
+                true,
+                "((p " + IFF + " q) " + AND + " (p " + AND + " \u00acq))"));
+        casos.add(new Caso(
+                "antonimo_privativo_inactivo",
+                "el servidor esta inactivo",
+                true,
+                "\u00acp"));
+        casos.add(new Caso(
+                "doble_negacion_antonimo",
+                "el servidor no esta inactivo",
+                true,
+                "p"));
+        casos.add(new Caso(
+                "negacion_oracional_condicional_tautologia",
+                "no es cierto que si el compilador optimiza el codigo entonces la ejecucion sea lenta, si y solo si el compilador optimiza el codigo y la ejecucion no es lenta",
+                true,
+                "(\u00ac((p " + IMP + " q)) " + IFF + " (p " + AND + " \u00acq))"));
+        casos.add(new Caso(
+                "alternancia_modo_indicativo_subjuntivo_disyuncion",
+                "Si la cola de mensajes esta vacia, entonces el procesador se suspende o la tarea se reintenta; pero no es verdad que el procesador se suspenda o la tarea se reintente.",
+                true,
+                "((p " + IMP + " (q " + OR + " r)) " + AND + " \u00ac((q " + OR + " r)))"));
         casos.add(new Caso("vacio", "", false, ""));
         casos.add(new Caso("solo_espacios", "   \t  ", false, ""));
 

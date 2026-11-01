@@ -5,10 +5,10 @@ module prueba_proceso_memoria
 
 use core
 
-atom p = "proceso liberar la memoria"
-atom q = "sistema colapsar"
+atom p = "el compilador optimiza el codigo"
+atom q = "la ejecucion sea lenta"
 
-nl premisa = "si el proceso no libera la memoria entonces el sistema colapsa si y solo si si el sistema no colapsa entonces el proceso libera la memoria"
+nl premisa = "No es cierto que si el compilador optimiza el codigo entonces la ejecucion sea lenta, si y solo si el compilador optimiza el codigo y la ejecucion no es lenta"
 let equivalencia = translate(premisa)
 
 vertauto equivalencia {

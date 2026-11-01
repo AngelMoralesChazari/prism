@@ -1,0 +1,16 @@
+module prueba_nl
+
+use core
+
+atom p = "el clúster permanece estable"
+atom q = "los nodos sincronizan"
+atom r = "el clúster experimenta latencia"
+
+nl premisa = "El clúster permanece estable si y solo si los nodos sincronizan; sin embargo, si los nodos no sincronizan entonces el clúster experimenta latencia o permanece estable."
+let equivalencia = translate(premisa)
+
+vertauto equivalencia {
+    steps
+    table
+    verdict
+}
