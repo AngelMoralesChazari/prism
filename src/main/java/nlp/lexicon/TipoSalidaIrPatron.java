@@ -21,5 +21,17 @@ public enum TipoSalidaIrPatron {
     /** Implicación con consecuente conjunción: antecedente → ({@code AndExpr}). */
     IMP_AND_CONS,
     /** Excepción (*a menos que*): ¬right → left. */
-    IMP_UNLESS
+    IMP_UNLESS,
+    /** Negación conjunta (*ni P ni Q*): ¬P ∧ ¬Q. */
+    AND_NEG,
+    /** Negación unaria (*no es cierto que P*): ¬P. */
+    NOT,
+    /** Implicación con conjunción en ambos lados: (P ∧ Q) → (R ∧ S). */
+    IMP_AND_AND,
+    /** Implicación con disyunción en ambos lados: (P ∨ Q) → (R ∨ S). */
+    IMP_OR_OR,
+    /** Implicación con conjunción en antecedente y disyunción en consecuente: (P ∧ Q) → (R ∨ S). */
+    IMP_AND_OR,
+    /** Implicación con disyunción en antecedente y conjunción en consecuente: (P ∨ Q) → (R ∧ S). */
+    IMP_OR_AND
 }

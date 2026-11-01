@@ -13,7 +13,18 @@ public record PatronSemanticoLgs(
         TipoSalidaIrPatron tipoIr,
         int indiceIzq,
         int indiceDer,
-        int indiceMedio) {
+        int indiceMedio,
+        int indiceCuarto) {
+
+    public PatronSemanticoLgs(
+            String nombre,
+            List<TipoTokenNatural> forma,
+            TipoSalidaIrPatron tipoIr,
+            int indiceIzq,
+            int indiceDer,
+            int indiceMedio) {
+        this(nombre, forma, tipoIr, indiceIzq, indiceDer, indiceMedio, -1);
+    }
 
     public PatronSemanticoLgs(
             String nombre,
@@ -21,7 +32,7 @@ public record PatronSemanticoLgs(
             TipoSalidaIrPatron tipoIr,
             int indiceIzq,
             int indiceDer) {
-        this(nombre, forma, tipoIr, indiceIzq, indiceDer, -1);
+        this(nombre, forma, tipoIr, indiceIzq, indiceDer, -1, -1);
     }
 
     public PatronSemanticoLgs {
@@ -30,14 +41,29 @@ public record PatronSemanticoLgs(
             throw new IllegalArgumentException("nombre vacío");
         }
         validarIndice(forma, indiceIzq, "left");
-        validarIndice(forma, indiceDer, "right");
+        if (tipoIr != TipoSalidaIrPatron.NOT) {
+            validarIndice(forma, indiceDer, "right");
+        }
         if (tipoIr == TipoSalidaIrPatron.IMP_AND
                 || tipoIr == TipoSalidaIrPatron.IMP_OR
                 || tipoIr == TipoSalidaIrPatron.IMP_OR_ANT
-                || tipoIr == TipoSalidaIrPatron.IMP_AND_CONS) {
+                || tipoIr == TipoSalidaIrPatron.IMP_AND_CONS
+                || tipoIr == TipoSalidaIrPatron.IMP_AND_AND
+                || tipoIr == TipoSalidaIrPatron.IMP_OR_OR
+                || tipoIr == TipoSalidaIrPatron.IMP_AND_OR
+                || tipoIr == TipoSalidaIrPatron.IMP_OR_AND) {
             validarIndice(forma, indiceMedio, "mid");
         } else if (indiceMedio >= 0) {
-            throw new IllegalArgumentException("mid solo aplica a imp_and/imp_or/imp_or_ant/imp_and_cons: " + nombre);
+            throw new IllegalArgumentException("mid no aplica a este tipo IR: " + nombre);
+        }
+
+        if (tipoIr == TipoSalidaIrPatron.IMP_AND_AND
+                || tipoIr == TipoSalidaIrPatron.IMP_OR_OR
+                || tipoIr == TipoSalidaIrPatron.IMP_AND_OR
+                || tipoIr == TipoSalidaIrPatron.IMP_OR_AND) {
+            validarIndice(forma, indiceCuarto, "fourth");
+        } else if (indiceCuarto >= 0) {
+            throw new IllegalArgumentException("fourth no aplica a este tipo IR: " + nombre);
         }
     }
 

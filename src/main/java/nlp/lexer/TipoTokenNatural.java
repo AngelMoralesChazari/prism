@@ -25,6 +25,18 @@ public enum TipoTokenNatural {
     Y,
     /** Disyunción coordinante */
     O,
+    /** Conjunción negativa (*ni P ni Q*) */
+    NI,
+    /** Conector condicional/causal (*dado que*) */
+    DADO_QUE,
+    /** Conector condicional/causal (*puesto que*) */
+    PUESTO_QUE,
+    /** Conector condicional/causal (*ya que*) */
+    YA_QUE,
+    /** Disyunción (*o bien*) */
+    O_BIEN,
+    /** Negación sentencial (*no es cierto que* / *no es verdad que*) */
+    NO_ES_CIERTO_QUE,
     /** Fragmento de texto (candidato a proposición) */
     LITERAL
 }

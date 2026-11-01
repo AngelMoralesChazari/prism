@@ -144,6 +144,20 @@ public final class PrismRegressionHarness {
                 "si el proceso no libera la memoria entonces el sistema colapsa si y solo si si el sistema no colapsa entonces el proceso libera la memoria",
                 true,
                 "((\u00acp " + IMP + " q) " + IFF + " (\u00acq " + IMP + " p))"));
+        casos.add(new Caso("ni_ni", "ni llueve ni hace calor", true, "(\u00acp " + AND + " \u00acq)"));
+        casos.add(new Caso("o_bien", "o bien estudio o bien descanso", true, "(p " + OR + " q)"));
+        casos.add(new Caso("no_es_cierto", "no es cierto que llueve", true, "\u00acp"));
+        casos.add(new Caso("dado_que", "dado que llueve entonces llevo paraguas", true, "(p " + IMP + " q)"));
+        casos.add(new Caso(
+                "si_conj_y_entonces_conj",
+                "si estudio y practico entonces apruebo y descanso",
+                true,
+                "((p " + AND + " q) " + IMP + " (r " + AND + " s))"));
+        casos.add(new Caso(
+                "sustantivos_sin_mutilar",
+                "si el socket falla entonces el servido reinicia",
+                true,
+                "(p " + IMP + " q)"));
         casos.add(new Caso("vacio", "", false, ""));
         casos.add(new Caso("solo_espacios", "   \t  ", false, ""));
 

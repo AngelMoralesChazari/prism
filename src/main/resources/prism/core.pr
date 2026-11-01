@@ -24,8 +24,16 @@ lexrule sufijo eis infinitivo er
 lexrule sufijo imos infinitivo ir
 lexrule sufijo an infinitivo ar
 lexrule sufijo as infinitivo ar
-lexrule sufijo a infinitivo ar
-lexrule sufijo o heuristica primera_persona
+
+# Lematizaciones explícitas para verbos comunes frecuentes
+lemma llego -> llegar
+lemma llega -> llegar
+lemma colapsa -> colapsar
+lemma libera -> liberar
+lemma trabajo -> trabajar
+lemma trabaja -> trabajar
+lemma salgo -> salir
+lemma sale -> salir
 
 # Lluvia
 lemma llueve -> llover
@@ -105,7 +113,15 @@ lemma tienes -> tener
 lemma tiene -> tener
 lemma tienen -> tener
 
-# Patrones semánticos (orden = prioridad de coincidencia)
+# Patrones semánticos (orden = prioridad de coincidencia: más específicos primero)
+
+# --- Patrones compuestos simétricos (4 literales: conjunción/disyunción en ambos extremos) ---
+pattern SI_CONJ_Y_ENTONCES_CONJ si literal y literal entonces literal y literal => imp_and_and left=1 mid=3 right=5 fourth=7
+pattern SI_DISY_O_ENTONCES_DISY si literal o literal entonces literal o literal => imp_or_or left=1 mid=3 right=5 fourth=7
+pattern SI_CONJ_Y_ENTONCES_DISY si literal y literal entonces literal o literal => imp_and_or left=1 mid=3 right=5 fourth=7
+pattern SI_DISY_O_ENTONCES_CONJ si literal o literal entonces literal y literal => imp_or_and left=1 mid=3 right=5 fourth=7
+
+# --- Patrones condicionales con conectiva compuesta en un extremo (3 literales) ---
 pattern SI_CONJ_Y_ENTONCES si literal y literal entonces literal => imp_and left=1 mid=3 right=5
 pattern SI_ENTONCES_DISY_CONS si literal entonces literal o literal => imp_or left=1 mid=3 right=5
 pattern SI_ENTONCES_CONJ_CONS si literal entonces literal y literal => imp_and_cons left=1 mid=3 right=5
@@ -116,6 +132,16 @@ pattern SIEMPRE_QUE_DISY_O_ELIPTICO siempre_que literal o literal literal => imp
 pattern CUANDO_CONJ_Y_ELIPTICO cuando literal y literal literal => imp_and left=1 mid=3 right=4
 pattern CUANDO_DISY_O_ELIPTICO cuando literal o literal literal => imp_or_ant left=1 mid=3 right=4
 pattern SI_CONJ_Y_ELIPTICO si literal y literal literal => imp_and left=1 mid=3 right=4
+
+# --- Patrones causales y condicionales alternativos ---
+pattern DADO_QUE_ENTONCES dado_que literal entonces literal => imp left=1 right=3
+pattern DADO_QUE_ELIPTICO dado_que literal literal => imp left=1 right=2
+pattern PUESTO_QUE_ENTONCES puesto_que literal entonces literal => imp left=1 right=3
+pattern PUESTO_QUE_ELIPTICO puesto_que literal literal => imp left=1 right=2
+pattern YA_QUE_ENTONCES ya_que literal entonces literal => imp left=1 right=3
+pattern YA_QUE_ELIPTICO ya_que literal literal => imp left=1 right=2
+
+# --- Patrones condicionales canónicos (2 literales) ---
 pattern SI_ENTONCES si literal entonces literal => imp left=1 right=3
 pattern SI_ELIPTICO si literal literal => imp left=1 right=2
 pattern CUANDO_ENTONCES cuando literal entonces literal => imp left=1 right=3
@@ -126,6 +152,13 @@ pattern SIEMPRE_QUE_ENTONCES siempre_que literal entonces literal => imp left=1 
 pattern SIEMPRE_QUE_ELIPTICO siempre_que literal literal => imp left=1 right=2
 pattern CONSECUENTE_SI_ANTECEDENTE literal si literal => imp left=2 right=0
 pattern EN_CASO_DE_QUE en_caso_de_que literal literal => imp left=1 right=2
+
+# --- Patrones de negación y disyunción coordinada ---
+pattern NI_NI ni literal ni literal => and_neg left=1 right=3
+pattern O_BIEN o_bien literal o_bien literal => or left=1 right=3
+pattern NO_ES_CIERTO no_es_cierto_que literal => not left=1 right=1
+
+# --- Conectivas binarias básicas ---
 pattern EQUIVALENCIA literal si_y_solo_si literal => equiv left=0 right=2
 pattern CONJUNCION literal y literal => and left=0 right=2
 pattern DISYUNCION literal o literal => or left=0 right=2

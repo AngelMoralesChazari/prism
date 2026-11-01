@@ -1,5 +1,5 @@
 # Bitácora de Investigación y Mejoras del Motor NLP — Prism
-**Documento de soporte para publicación académica y tesis**  
+**Documento de soporte para publicación académica, artículo científico y tesis**  
 **Proyecto:** Prism (Lenguaje Declarativo de Dominio Específico para Lógica Proposicional)  
 **Fecha:** Noviembre 2026  
 
@@ -11,7 +11,12 @@
 2. [Mejora #2: Extracción de Negación Verbal Intra-Predicativa](#mejora-2-extracción-de-negación-verbal-intra-predicativa)
 3. [Mejora #3: Parser Jerárquico Recursivo de Conectores Discursivos Mayores](#mejora-3-parser-jerárquico-recursivo-de-conectores-discursivos-mayores)
 4. [Mejora #4: Extensión del Léxico Declarativo para Sustantivos Técnicos Computacionales](#mejora-4-extensión-del-léxico-declarativo-para-sustantivos-técnicos-computacionales)
-5. [Caso de Estudio Canónico: Demostración de Equivalencia Contrapositiva](#caso-de-estudio-canónico)
+5. [Mejora #5: Supresión de Sobre-Lematización Destructiva y Agnosticismo Léxico](#mejora-5-supresión-de-sobre-lematización-destructiva-y-agnosticismo-léxico)
+6. [Mejora #6: Patrones Compuestos Simétricos de 4 Slots (Conjunción y Disyunción Bilateral)](#mejora-6-patrones-compuestos-simétricos-de-4-slots)
+7. [Mejora #7: Gramática de Causalidad y Condición Alternativa (Dado que, Puesto que, Ya que)](#mejora-7-gramática-de-causalidad-y-condición-alternativa)
+8. [Mejora #8: Conectivas Coordinadas de Negación y Disyunción Fuerte (Ni... Ni, O bien... O bien)](#mejora-8-conectivas-coordinadas-de-negación-y-disyunción-fuerte)
+9. [Caso de Estudio Canónico: Demostración de Equivalencia Contrapositiva](#caso-de-estudio-canónico)
+10. [Tabla Maestra Consolidada de Patrones Semánticos Soportados](#tabla-maestra-de-patrones-semánticos)
 
 ---
 
@@ -94,7 +99,96 @@
   ```text
   lexrule excluir ... proceso sistema memoria datos red archivo servidor usuario
   ```
-  Con esto, *sistema*, *memoria* y *proceso* mantienen su integridad léxica mientras que los verbos *libera* y *colapsa* se lematizan adecuadamente a sus formas infinitivas *liberar* y *colapsar*.
+
+---
+
+### Mejora #5: Supresión de Sobre-Lematización Destructiva y Agnosticismo Léxico
+
+- **Componente:** `src/main/resources/prism/core.pr`, `nlp.lexicon.NormalizadorMorfologico`
+- **Problema formal identificado:**
+  Mantener una lista exhaustiva de sustantivos en `lexrule excluir` es insostenible en el tiempo: si el usuario escribe un término nuevo (*"socket"*, *"hilo"*, *"nodo"*, *"tabla"*) o comete una errata tipográfica (*"servido"* en lugar de *"servidor"*), las reglas ciegas de un solo carácter (`-a` $\to$ `-ar` y `-o` $\to$ `-ar`) destrozaban el término inventando verbos inexistentes (*"tablar"*, *"servidar"*).
+
+- **Fundamento teórico:**
+  **Principio de Agnosticismo Proposicional (Tarski / Frege):**
+  En lógica formal, una proposición atómica es una **caja negra semántica**. Al compilador lógico no le interesa saber qué significa internamente el texto de una proposición, sino garantizar que apariciones idénticas reciban el mismo identificador atómico ($p, q$). La lematización solo debe aplicarse sobre desinencias verbales complejas de alta certeza (`-an`, `-as`, `-amos`, `-aban`, `-aron`, `-emos`, `-imos`) y mediante lemas explícitos para verbos irregulares, jamás sobre terminaciones ambiguas de una sola letra (`-a`, `-o`) que coinciden con el 80% de los sustantivos en español.
+
+- **Solución implementada:**
+  1. Se eliminaron de `core.pr` las reglas degenerativas `lexrule sufijo a infinitivo ar` y `lexrule sufijo o heuristica primera_persona`.
+  2. Se fijaron lemas explícitos (`lemma llego -> llegar`, `lemma colapsa -> colapsar`, `lemma libera -> liberar`).
+  3. **Resultado:** Ahora cualquier término técnico arbitrario (*"el socket falla"*, *"el hilo se bloquea"*) o con dedazo (*"el servido reinicia"*) se preserva fiel e inmutable como proposición atómica limpia, sin requerir agregar palabras al diccionario.
+
+---
+
+### Mejora #6: Patrones Compuestos Simétricos de 4 Slots
+
+- **Componente:** `nlp.lexicon.PatronSemanticoLgs`, `nlp.lexicon.TipoSalidaIrPatron`, `nlp.semantica.SemanticMapper`, `src/main/resources/prism/core.pr`
+- **Problema formal identificado:**
+  Las reglas de coincidencia de patrones anteriores solo contemplaban conectivas compuestas en un solo extremo (p. ej. `SI_CONJ_Y_ENTONCES` con 3 literales: $(p \land q) \to r$). No existía forma declarativa de parsear oraciones con conectivas compuestas tanto en el antecedente como en el consecuente.
+
+- **Fundamento teórico:**
+  Implicación entre cláusulas complejas en lógica proposicional:
+  $$(P \star_1 Q) \longrightarrow (R \star_2 S) \quad \text{donde } \star_i \in \{\land, \lor\}$$
+
+- **Solución implementada:**
+  1. Se expandió el récord `PatronSemanticoLgs` para soportar 4 ranuras de índices: `left`, `mid`, `right`, `fourth`.
+  2. Se crearon los tipos IR: `IMP_AND_AND`, `IMP_OR_OR`, `IMP_AND_OR`, `IMP_OR_AND`.
+  3. Se declararon los patrones simétricos en `core.pr`:
+     ```text
+     pattern SI_CONJ_Y_ENTONCES_CONJ si literal y literal entonces literal y literal => imp_and_and left=1 mid=3 right=5 fourth=7
+     pattern SI_DISY_O_ENTONCES_DISY si literal o literal entonces literal o literal => imp_or_or left=1 mid=3 right=5 fourth=7
+     pattern SI_CONJ_Y_ENTONCES_DISY si literal y literal entonces literal o literal => imp_and_or left=1 mid=3 right=5 fourth=7
+     pattern SI_DISY_O_ENTONCES_CONJ si literal o literal entonces literal y literal => imp_or_and left=1 mid=3 right=5 fourth=7
+     ```
+  - **Ejemplo verificado:**
+    > Entrada: *"si estudio y practico entonces apruebo y descanso"*  
+    > Fórmula: `((p ∧ q) → (r ∧ s))`
+
+---
+
+### Mejora #7: Gramática de Causalidad y Condición Alternativa
+
+- **Componente:** `nlp.lexer.NaturalLexer`, `src/main/resources/prism/core.pr`
+- **Fundamento teórico:**
+  En el lenguaje natural castellano, la relación de consecuencia lógica no solo se expresa mediante la partícula *si*, sino a través de conjunciones causales y condicionales subordinantes (*dado que*, *puesto que*, *ya que*), las cuales formalizan idéntica semántica de implicación material ($p \rightarrow q$).
+
+- **Solución implementada:**
+  1. Se introdujeron los tokens `DADO_QUE`, `PUESTO_QUE`, `YA_QUE` en el lexer.
+  2. Se añadieron los patrones con y sin *entonces*:
+     ```text
+     pattern DADO_QUE_ENTONCES dado_que literal entonces literal => imp left=1 right=3
+     pattern DADO_QUE_ELIPTICO dado_que literal literal => imp left=1 right=2
+     pattern PUESTO_QUE_ENTONCES puesto_que literal entonces literal => imp left=1 right=3
+     pattern PUESTO_QUE_ELIPTICO puesto_que literal literal => imp left=1 right=2
+     pattern YA_QUE_ENTONCES ya_que literal entonces literal => imp left=1 right=3
+     pattern YA_QUE_ELIPTICO ya_que literal literal => imp left=1 right=2
+     ```
+  - **Ejemplo verificado:**
+    > Entrada: *"dado que llueve entonces llevo paraguas"*  
+    > Fórmula: `(p → q)`
+
+---
+
+### Mejora #8: Conectivas Coordinadas de Negación y Disyunción Fuerte
+
+- **Componente:** `nlp.lexer.NaturalLexer`, `nlp.lexicon.TipoSalidaIrPatron`, `nlp.semantica.SemanticMapper`, `src/main/resources/prism/core.pr`
+- **Fundamento teórico:**
+  1. **Negación conjunta (Leyes de De Morgan / Operador NOR de Peirce / Quine):** La construcción en español *"ni P ni Q"* equivale estrictamente a la conjunción de las negaciones de ambas proposiciones:
+     $$\mathbf{ni}\; P \;\mathbf{ni}\; Q \iff (\neg P \land \neg Q) \iff \neg(P \lor Q)$$
+  2. **Disyunción enfática:** *"o bien P o bien Q"* formaliza $(P \lor Q)$.
+  3. **Negación proposicional externa:** *"no es cierto que P"* formaliza $\neg P$.
+
+- **Solución implementada:**
+  1. Reconocimiento de unidades léxicas `" ni "`, `"ni "`, `" o bien "`, `"o bien "`, `"no es cierto que "`, `"no es verdad que "`.
+  2. Declaración en `core.pr`:
+     ```text
+     pattern NI_NI ni literal ni literal => and_neg left=1 right=3
+     pattern O_BIEN o_bien literal o_bien literal => or left=1 right=3
+     pattern NO_ES_CIERTO no_es_cierto_que literal => not left=1 right=1
+     ```
+  - **Ejemplos verificados:**
+    - *"ni llueve ni hace calor"* $\implies (\neg p \land \neg q)$
+    - *"o bien estudio o bien descanso"* $\implies (p \lor q)$
+    - *"no es cierto que llueve"* $\implies \neg p$
 
 ---
 
@@ -150,3 +244,30 @@ vertauto equivalencia {
 ```text
 OK: examples/prueba_proceso_memoria.pr -> tautology (100% verificado)
 ```
+
+---
+
+### Tabla Maestra de Patrones Semánticos
+
+| Nombre del Patrón | Forma Léxica | Tipo IR | Fórmula Lógica Resultante |
+| :--- | :--- | :--- | :--- |
+| `SI_CONJ_Y_ENTONCES_CONJ` | `si literal y literal entonces literal y literal` | `imp_and_and` | $((p \land q) \rightarrow (r \land s))$ |
+| `SI_DISY_O_ENTONCES_DISY` | `si literal o literal entonces literal o literal` | `imp_or_or` | $((p \lor q) \rightarrow (r \lor s))$ |
+| `SI_CONJ_Y_ENTONCES_DISY` | `si literal y literal entonces literal o literal` | `imp_and_or` | $((p \land q) \rightarrow (r \lor s))$ |
+| `SI_DISY_O_ENTONCES_CONJ` | `si literal o literal entonces literal y literal` | `imp_or_and` | $((p \lor q) \rightarrow (r \land s))$ |
+| `SI_CONJ_Y_ENTONCES` | `si literal y literal entonces literal` | `imp_and` | $((p \land q) \rightarrow r)$ |
+| `SI_ENTONCES_DISY_CONS` | `si literal entonces literal o literal` | `imp_or` | $(p \rightarrow (q \lor r))$ |
+| `SI_ENTONCES_CONJ_CONS` | `si literal entonces literal y literal` | `imp_and_cons` | $(p \rightarrow (q \land r))$ |
+| `SI_DISY_O_ENTONCES` | `si literal o literal entonces literal` | `imp_or_ant` | $((p \lor q) \rightarrow r)$ |
+| `DADO_QUE_ENTONCES` | `dado_que literal entonces literal` | `imp` | $(p \rightarrow q)$ |
+| `PUESTO_QUE_ENTONCES` | `puesto_que literal entonces literal` | `imp` | $(p \rightarrow q)$ |
+| `YA_QUE_ENTONCES` | `ya_que literal entonces literal` | `imp` | $(p \rightarrow q)$ |
+| `SI_ENTONCES` | `si literal entonces literal` | `imp` | $(p \rightarrow q)$ |
+| `A_MENOS_QUE` | `literal a_menos_que literal` | `imp_unless` | $(\neg q \rightarrow p)$ |
+| `SOLO_SI` | `literal solo_si literal` | `imp` | $(p \rightarrow q)$ |
+| `NI_NI` | `ni literal ni literal` | `and_neg` | $(\neg p \land \neg q)$ |
+| `O_BIEN` | `o_bien literal o_bien literal` | `or` | $(p \lor q)$ |
+| `NO_ES_CIERTO` | `no_es_cierto_que literal` | `not` | $\neg p$ |
+| `EQUIVALENCIA` | `literal si_y_solo_si literal` | `equiv` | $(p \leftrightarrow q)$ |
+| `CONJUNCION` | `literal y literal` | `and` | $(p \land q)$ |
+| `DISYUNCION` | `literal o literal` | `or` | $(p \lor q)$ |

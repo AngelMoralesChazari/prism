@@ -262,6 +262,7 @@ public final class LgsCargador {
         int left = -1;
         int right = -1;
         int mid = -1;
+        int fourth = -1;
         for (int i = 1; i < partesSalida.length; i++) {
             String p = partesSalida[i].toLowerCase(Locale.ROOT);
             if (p.startsWith("left=")) {
@@ -270,19 +271,31 @@ public final class LgsCargador {
                 right = parsearIndice(numLinea, p.substring(6));
             } else if (p.startsWith("mid=")) {
                 mid = parsearIndice(numLinea, p.substring(4));
+            } else if (p.startsWith("fourth=") || p.startsWith("extra=")) {
+                fourth = parsearIndice(numLinea, p.substring(p.indexOf('=') + 1));
             }
         }
-        if (left < 0 || right < 0) {
+        if (left < 0 || (right < 0 && tipoIr != TipoSalidaIrPatron.NOT)) {
             throw new IOException("Línea " + numLinea + ": faltan left= e right= en pattern: " + linea);
         }
         if ((tipoIr == TipoSalidaIrPatron.IMP_AND
                 || tipoIr == TipoSalidaIrPatron.IMP_OR
                 || tipoIr == TipoSalidaIrPatron.IMP_OR_ANT
-                || tipoIr == TipoSalidaIrPatron.IMP_AND_CONS) && mid < 0) {
-            throw new IOException("Línea " + numLinea + ": imp_and/imp_or/imp_or_ant/imp_and_cons requieren mid=: " + linea);
+                || tipoIr == TipoSalidaIrPatron.IMP_AND_CONS
+                || tipoIr == TipoSalidaIrPatron.IMP_AND_AND
+                || tipoIr == TipoSalidaIrPatron.IMP_OR_OR
+                || tipoIr == TipoSalidaIrPatron.IMP_AND_OR
+                || tipoIr == TipoSalidaIrPatron.IMP_OR_AND) && mid < 0) {
+            throw new IOException("Línea " + numLinea + ": este tipo IR requiere mid=: " + linea);
+        }
+        if ((tipoIr == TipoSalidaIrPatron.IMP_AND_AND
+                || tipoIr == TipoSalidaIrPatron.IMP_OR_OR
+                || tipoIr == TipoSalidaIrPatron.IMP_AND_OR
+                || tipoIr == TipoSalidaIrPatron.IMP_OR_AND) && fourth < 0) {
+            throw new IOException("Línea " + numLinea + ": este tipo IR requiere fourth=: " + linea);
         }
         try {
-            return new PatronSemanticoLgs(nombre, forma, tipoIr, left, right, mid);
+            return new PatronSemanticoLgs(nombre, forma, tipoIr, left, right, mid, fourth);
         } catch (IllegalArgumentException ex) {
             throw new IOException("Línea " + numLinea + ": " + ex.getMessage() + " — " + linea, ex);
         }
@@ -308,7 +321,13 @@ public final class LgsCargador {
             case "imp_or_ant" -> TipoSalidaIrPatron.IMP_OR_ANT;
             case "imp_and_cons" -> TipoSalidaIrPatron.IMP_AND_CONS;
             case "imp_unless" -> TipoSalidaIrPatron.IMP_UNLESS;
-            default -> throw new IOException("Línea " + numLinea + ": tipo IR desconocido (use imp, and, or, equiv, imp_and, imp_or, imp_or_ant, imp_and_cons, imp_unless): " + token);
+            case "and_neg", "nini" -> TipoSalidaIrPatron.AND_NEG;
+            case "not", "neg" -> TipoSalidaIrPatron.NOT;
+            case "imp_and_and" -> TipoSalidaIrPatron.IMP_AND_AND;
+            case "imp_or_or" -> TipoSalidaIrPatron.IMP_OR_OR;
+            case "imp_and_or" -> TipoSalidaIrPatron.IMP_AND_OR;
+            case "imp_or_and" -> TipoSalidaIrPatron.IMP_OR_AND;
+            default -> throw new IOException("Línea " + numLinea + ": tipo IR desconocido: " + token);
         };
     }
 
@@ -325,6 +344,12 @@ public final class LgsCargador {
             case "a_menos_que" -> TipoTokenNatural.A_MENOS_QUE;
             case "y" -> TipoTokenNatural.Y;
             case "o" -> TipoTokenNatural.O;
+            case "ni" -> TipoTokenNatural.NI;
+            case "dado_que" -> TipoTokenNatural.DADO_QUE;
+            case "puesto_que" -> TipoTokenNatural.PUESTO_QUE;
+            case "ya_que" -> TipoTokenNatural.YA_QUE;
+            case "o_bien" -> TipoTokenNatural.O_BIEN;
+            case "no_es_cierto_que", "no_es_cierto" -> TipoTokenNatural.NO_ES_CIERTO_QUE;
             case "literal" -> TipoTokenNatural.LITERAL;
             default -> throw new IOException("Línea " + numLinea + ": token de forma desconocido: " + token);
         };

@@ -67,12 +67,14 @@ public class SemanticMapper {
 
     private LogicExpr construirDesdePatron(PatronSemanticoLgs p, List<TokenNatural> tokens) {
         AtomExpr izq = atomoDesde(tokens.get(p.indiceIzq()).getLexema());
-        AtomExpr der = atomoDesde(tokens.get(p.indiceDer()).getLexema());
+        AtomExpr der = p.indiceDer() >= 0 ? atomoDesde(tokens.get(p.indiceDer()).getLexema()) : null;
         return switch (p.tipoIr()) {
             case IMP -> new ImpExpr(izq, der);
             case AND -> new AndExpr(izq, der);
             case OR -> new OrExpr(izq, der);
             case EQUIV -> new EquivExpr(izq, der);
+            case AND_NEG -> new AndExpr(new NegExpr(izq), new NegExpr(der));
+            case NOT -> new NegExpr(izq);
             case IMP_AND -> {
                 AtomExpr medio = atomoDesde(tokens.get(p.indiceMedio()).getLexema());
                 yield new ImpExpr(new AndExpr(izq, medio), der);
@@ -90,6 +92,26 @@ public class SemanticMapper {
                 yield new ImpExpr(izq, new AndExpr(medio, der));
             }
             case IMP_UNLESS -> new ImpExpr(new NegExpr(der), izq);
+            case IMP_AND_AND -> {
+                AtomExpr medio = atomoDesde(tokens.get(p.indiceMedio()).getLexema());
+                AtomExpr cuarto = atomoDesde(tokens.get(p.indiceCuarto()).getLexema());
+                yield new ImpExpr(new AndExpr(izq, medio), new AndExpr(der, cuarto));
+            }
+            case IMP_OR_OR -> {
+                AtomExpr medio = atomoDesde(tokens.get(p.indiceMedio()).getLexema());
+                AtomExpr cuarto = atomoDesde(tokens.get(p.indiceCuarto()).getLexema());
+                yield new ImpExpr(new OrExpr(izq, medio), new OrExpr(der, cuarto));
+            }
+            case IMP_AND_OR -> {
+                AtomExpr medio = atomoDesde(tokens.get(p.indiceMedio()).getLexema());
+                AtomExpr cuarto = atomoDesde(tokens.get(p.indiceCuarto()).getLexema());
+                yield new ImpExpr(new AndExpr(izq, medio), new OrExpr(der, cuarto));
+            }
+            case IMP_OR_AND -> {
+                AtomExpr medio = atomoDesde(tokens.get(p.indiceMedio()).getLexema());
+                AtomExpr cuarto = atomoDesde(tokens.get(p.indiceCuarto()).getLexema());
+                yield new ImpExpr(new OrExpr(izq, medio), new AndExpr(der, cuarto));
+            }
         };
     }
 

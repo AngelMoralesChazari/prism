@@ -10,29 +10,47 @@ import java.util.List;
 public final class NaturalLexer {
 
     private static final String PALABRAS_CLAVE[] = {
+            "no es cierto que ",
+            "no es verdad que ",
             "en caso de que ",
             "si y solo si ",
             "a menos que ",
             "siempre que ",
+            "puesto que ",
+            "dado que ",
             "solo si ",
+            "ya que ",
+            " o bien ",
+            "o bien ",
             "entonces ",
             "cuando ",
             "si ",
             " y ",
             " o ",
+            " ni ",
+            "ni ",
     };
 
     private static final TipoTokenNatural TIPOS[] = {
+            TipoTokenNatural.NO_ES_CIERTO_QUE,
+            TipoTokenNatural.NO_ES_CIERTO_QUE,
             TipoTokenNatural.EN_CASO_DE_QUE,
             TipoTokenNatural.SI_Y_SOLO_SI,
             TipoTokenNatural.A_MENOS_QUE,
             TipoTokenNatural.SIEMPRE_QUE,
+            TipoTokenNatural.PUESTO_QUE,
+            TipoTokenNatural.DADO_QUE,
             TipoTokenNatural.SOLO_SI,
+            TipoTokenNatural.YA_QUE,
+            TipoTokenNatural.O_BIEN,
+            TipoTokenNatural.O_BIEN,
             TipoTokenNatural.ENTONCES,
             TipoTokenNatural.CUANDO,
             TipoTokenNatural.SI,
             TipoTokenNatural.Y,
             TipoTokenNatural.O,
+            TipoTokenNatural.NI,
+            TipoTokenNatural.NI,
     };
 
     public List<TokenNatural> tokenizar(String normalizado) {
@@ -108,7 +126,9 @@ public final class NaturalLexer {
                     return true;
                 }
                 if (tipo == TipoTokenNatural.SI || tipo == TipoTokenNatural.SI_Y_SOLO_SI
-                        || tipo == TipoTokenNatural.SIEMPRE_QUE || tipo == TipoTokenNatural.CUANDO) {
+                        || tipo == TipoTokenNatural.SIEMPRE_QUE || tipo == TipoTokenNatural.CUANDO
+                        || tipo == TipoTokenNatural.DADO_QUE || tipo == TipoTokenNatural.YA_QUE
+                        || tipo == TipoTokenNatural.PUESTO_QUE) {
                     return false;
                 }
                 k = kw[0];
@@ -143,7 +163,10 @@ public final class NaturalLexer {
     private static boolean esInicioBloqueCondicional(TipoTokenNatural tipo) {
         return tipo == TipoTokenNatural.SI
                 || tipo == TipoTokenNatural.SIEMPRE_QUE
-                || tipo == TipoTokenNatural.CUANDO;
+                || tipo == TipoTokenNatural.CUANDO
+                || tipo == TipoTokenNatural.DADO_QUE
+                || tipo == TipoTokenNatural.YA_QUE
+                || tipo == TipoTokenNatural.PUESTO_QUE;
     }
 
     private static boolean ultimoTokenPermiteElipsis(List<TokenNatural> salida) {
@@ -153,7 +176,10 @@ public final class NaturalLexer {
         TipoTokenNatural t = salida.get(salida.size() - 1).getTipo();
         return t == TipoTokenNatural.SI
                 || t == TipoTokenNatural.SIEMPRE_QUE
-                || t == TipoTokenNatural.CUANDO;
+                || t == TipoTokenNatural.CUANDO
+                || t == TipoTokenNatural.DADO_QUE
+                || t == TipoTokenNatural.YA_QUE
+                || t == TipoTokenNatural.PUESTO_QUE;
     }
 
     private static boolean literalSinConectoresInternos(String lit) {
