@@ -23,9 +23,14 @@ public final class PrAtomRegistry {
     }
 
     public RegistroProposiciones toRegistroProposiciones() {
+        return toRegistroProposiciones(null);
+    }
+
+    public RegistroProposiciones toRegistroProposiciones(nlp.lexicon.BaseConocimiento baseConocimiento) {
         RegistroProposiciones registro = new RegistroProposiciones();
         for (Map.Entry<String, String> entry : simboloAEtiqueta.entrySet()) {
-            registro.registrarAtomoDeclarado(entry.getKey(), entry.getValue());
+            String canonica = baseConocimiento != null ? baseConocimiento.canonicalizarFragmento(entry.getValue()) : null;
+            registro.registrarAtomoDeclarado(entry.getKey(), entry.getValue(), canonica);
         }
         return registro;
     }
@@ -39,10 +44,13 @@ public final class PrAtomRegistry {
             return Map.of();
         }
         LinkedHashMap<String, String> resultado = new LinkedHashMap<>();
+        java.util.Set<String> simbolosVistos = new java.util.HashSet<>();
         for (Map.Entry<String, String> entry : desdeTranslate.entrySet()) {
             String simbolo = entry.getValue();
             String etiqueta = simboloAEtiqueta.getOrDefault(simbolo, entry.getKey());
-            resultado.put(etiqueta, simbolo);
+            if (simbolosVistos.add(simbolo)) {
+                resultado.put(etiqueta, simbolo);
+            }
         }
         return Collections.unmodifiableMap(resultado);
     }

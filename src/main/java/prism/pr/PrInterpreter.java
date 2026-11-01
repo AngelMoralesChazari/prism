@@ -88,7 +88,10 @@ public final class PrInterpreter {
                     + call.moduleOverride());
         }
         String texto = resolverTexto(call.text(), nlTextos);
-        PrismResult traduccion = translateService.traducir(texto);
+        PrismResult traduccion = translateService.traducir(
+                texto,
+                atomRegistry.toRegistroProposiciones(translateService.getBaseConocimiento())
+        );
         if (!traduccion.isExito()) {
             throw new PrRuntimeException("translate falló: " + traduccion.getMensaje());
         }

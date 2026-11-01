@@ -186,4 +186,141 @@ public final class NormalizadorMorfologico {
         reglas.add(ReglaMorfologicaLgs.heuristicaPrimeraPersona("o"));
         return reglas;
     }
+
+    /**
+     * Determina si dos palabras son flexiones verbales regulares del mismo verbo en español,
+     * atendiendo a la alternancia sistemática indicativo/subjuntivo (e.g. suspende <-> suspenda,
+     * reintenta <-> reintente, optimiza <-> optimice) y número (singular/plural).
+     */
+    public static boolean sonFlexionesEquivalentes(String w1, String w2) {
+        if (w1 == null || w2 == null) {
+            return false;
+        }
+        String a = w1.trim().toLowerCase(Locale.ROOT);
+        String b = w2.trim().toLowerCase(Locale.ROOT);
+        if (a.equals(b)) {
+            return true;
+        }
+        if (a.length() < 3 || b.length() < 3) {
+            return false;
+        }
+
+        // 1. Alternancia 3.ª persona singular: -a <-> -e
+        if (coincidenAlternancia(a, b, "a", "e") || coincidenAlternancia(a, b, "e", "a")) {
+            return true;
+        }
+
+        // 2. Alternancia 3.ª persona plural: -an <-> -en
+        if (coincidenAlternancia(a, b, "an", "en") || coincidenAlternancia(a, b, "en", "an")) {
+            return true;
+        }
+
+        // 3. Alternancia 1.ª persona presente (-o) <-> subjuntivo (-a / -e)
+        if (coincidenAlternancia(a, b, "o", "a") || coincidenAlternancia(a, b, "a", "o")
+                || coincidenAlternancia(a, b, "o", "e") || coincidenAlternancia(a, b, "e", "o")) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static boolean coincidenAlternancia(String w1, String w2, String suf1, String suf2) {
+        if (!w1.endsWith(suf1) || !w2.endsWith(suf2)) {
+            return false;
+        }
+        String raiz1 = w1.substring(0, w1.length() - suf1.length());
+        String raiz2 = w2.substring(0, w2.length() - suf2.length());
+        if (raiz1.length() < 2 || raiz2.length() < 2) {
+            return false;
+        }
+
+        // Raíz idéntica (e.g. suspend- <-> suspend-, reintent- <-> reintent-)
+        if (raiz1.equals(raiz2)) {
+            return true;
+        }
+
+        // Alternancias ortográficas regulares ante vocal e/i vs a/o:
+        // c <-> z (optimic-e <-> optimiz-a, organic-e <-> organiz-a)
+        if (raiz1.endsWith("z") && raiz2.endsWith("c")) {
+            if (raiz1.substring(0, raiz1.length() - 1).equals(raiz2.substring(0, raiz2.length() - 1))) {
+                return true;
+            }
+        }
+        if (raiz1.endsWith("c") && raiz2.endsWith("z")) {
+            if (raiz1.substring(0, raiz1.length() - 1).equals(raiz2.substring(0, raiz2.length() - 1))) {
+                return true;
+            }
+        }
+
+        // g <-> gu (apag-a <-> apagu-e, lleg-a <-> llegu-e)
+        if (raiz1.endsWith("g") && raiz2.endsWith("gu")) {
+            if (raiz1.substring(0, raiz1.length() - 1).equals(raiz2.substring(0, raiz2.length() - 2))) {
+                return true;
+            }
+        }
+        if (raiz1.endsWith("gu") && raiz2.endsWith("g")) {
+            if (raiz1.substring(0, raiz1.length() - 2).equals(raiz2.substring(0, raiz2.length() - 1))) {
+                return true;
+            }
+        }
+
+        // c <-> qu (provoc-a <-> provoqu-e, arranc-a <-> arranqu-e)
+        if (raiz1.endsWith("c") && raiz2.endsWith("qu")) {
+            if (raiz1.substring(0, raiz1.length() - 1).equals(raiz2.substring(0, raiz2.length() - 2))) {
+                return true;
+            }
+        }
+        if (raiz1.endsWith("qu") && raiz2.endsWith("c")) {
+            if (raiz1.substring(0, raiz1.length() - 2).equals(raiz2.substring(0, raiz2.length() - 1))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determina si dos cláusulas o proposiciones son semánticamente equivalentes
+     * permitiendo que los verbos conjugados alternen entre modo indicativo y subjuntivo.
+     */
+    public static boolean sonFrasesEquivalentes(String f1, String f2) {
+        if (f1 == null || f2 == null) {
+            return false;
+        }
+        String s1 = f1.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+        String s2 = f2.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+        if (s1.equals(s2)) {
+            return true;
+        }
+
+        s1 = s1.replaceAll("^(el|la|los|las|un|una|unos|unas)\\s+", "");
+        s2 = s2.replaceAll("^(el|la|los|las|un|una|unos|unas)\\s+", "");
+        if (s1.equals(s2)) {
+            return true;
+        }
+
+        if (s1.length() >= 5 && s2.length() >= 5 && (s1.endsWith(" " + s2) || s2.endsWith(" " + s1))) {
+            return true;
+        }
+
+        String[] p1 = s1.split(" ");
+        String[] p2 = s2.split(" ");
+        if (p1.length != p2.length) {
+            return false;
+        }
+
+        int diferencias = 0;
+        for (int i = 0; i < p1.length; i++) {
+            if (p1[i].equals(p2[i])) {
+                continue;
+            }
+            if (sonFlexionesEquivalentes(p1[i], p2[i])) {
+                diferencias++;
+            } else {
+                return false;
+            }
+        }
+
+        return diferencias >= 1 && diferencias <= 2;
+    }
 }
