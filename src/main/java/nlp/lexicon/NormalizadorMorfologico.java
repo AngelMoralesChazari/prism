@@ -341,4 +341,127 @@ public final class NormalizadorMorfologico {
         }
         return diferencias <= 2;
     }
+
+    // --- Módulo de Correferencia Pronominal y Anáfora ---
+
+    private static final Set<String> PRONOMBRES_PERSONALES = Set.of(
+            "el", "ella", "ellos", "ellas", "ello"
+    );
+
+    private static final Set<String> PRONOMBRES_DEMOSTRATIVOS = Set.of(
+            "este", "esta", "estos", "estas", "esto",
+            "ese", "esa", "esos", "esas", "eso",
+            "aquel", "aquella", "aquellos", "aquellas", "aquello"
+    );
+
+    private static final Set<String> DETERMINATIVOS_ANAFORICOS = Set.of(
+            "dicho", "dicha", "dichos", "dichas", "mismo", "misma", "mismos", "mismas"
+    );
+
+    public static boolean esPronombreAnaforico(String palabra) {
+        if (palabra == null || palabra.isBlank()) {
+            return false;
+        }
+        String p = palabra.trim().toLowerCase(Locale.ROOT);
+        return PRONOMBRES_PERSONALES.contains(p)
+                || PRONOMBRES_DEMOSTRATIVOS.contains(p)
+                || DETERMINATIVOS_ANAFORICOS.contains(p);
+    }
+
+    public enum GeneroGramatical { MASCULINO, FEMENINO, NEUTRO, INDIFERENTE }
+    public enum NumeroGramatical { SINGULAR, PLURAL, INDIFERENTE }
+
+    public static GeneroGramatical generoPronombre(String p) {
+        String w = p.trim().toLowerCase(Locale.ROOT);
+        if (w.equals("ella") || w.equals("ellas") || w.equals("esta") || w.equals("estas")
+                || w.equals("esa") || w.equals("esas") || w.equals("aquella") || w.equals("aquellas")
+                || w.equals("dicha") || w.equals("dichas") || w.equals("misma") || w.equals("mismas")) {
+            return GeneroGramatical.FEMENINO;
+        }
+        if (w.equals("el") || w.equals("ellos") || w.equals("este") || w.equals("estos")
+                || w.equals("ese") || w.equals("esos") || w.equals("aquel") || w.equals("aquellos")
+                || w.equals("dicho") || w.equals("dichos") || w.equals("mismo") || w.equals("mismos")) {
+            return GeneroGramatical.MASCULINO;
+        }
+        return GeneroGramatical.NEUTRO;
+    }
+
+    public static NumeroGramatical numeroPronombre(String p) {
+        String w = p.trim().toLowerCase(Locale.ROOT);
+        if (w.endsWith("s")) {
+            return NumeroGramatical.PLURAL;
+        }
+        return NumeroGramatical.SINGULAR;
+    }
+
+    public static boolean concuerdaGeneroYNumero(String pronombre, String sujetoAntecedente) {
+        GeneroGramatical gP = generoPronombre(pronombre);
+        NumeroGramatical nP = numeroPronombre(pronombre);
+        if (gP == GeneroGramatical.NEUTRO || gP == GeneroGramatical.INDIFERENTE) {
+            return true;
+        }
+
+        String s = sujetoAntecedente.trim().toLowerCase(Locale.ROOT);
+        boolean esPluralSujeto = s.endsWith("s") || s.contains("los ") || s.contains("las ") || s.contains("unos ") || s.contains("unas ");
+        if (nP == NumeroGramatical.PLURAL && !esPluralSujeto) {
+            return false;
+        }
+        if (nP == NumeroGramatical.SINGULAR && esPluralSujeto) {
+            return false;
+        }
+
+        boolean esFemeninoSujeto = s.startsWith("la ") || s.startsWith("una ") || s.startsWith("las ") || s.startsWith("unas ")
+                || s.endsWith("a") || s.endsWith("as") || s.contains(" cion") || s.contains(" dad") || s.contains(" tud");
+        if (gP == GeneroGramatical.FEMENINO) {
+            return esFemeninoSujeto;
+        }
+        if (gP == GeneroGramatical.MASCULINO) {
+            return !esFemeninoSujeto;
+        }
+        return true;
+    }
+
+    /**
+     * Determina si una cláusula con sujeto pronominal anafórico (e.g. "este se suspenda",
+     * "ella se reintente", "el libera la memoria") corresponde al átomo antecedente.
+     */
+    public static boolean coincideAnafora(String fraseConPronombre, String etiquetaAntecedente) {
+        if (fraseConPronombre == null || etiquetaAntecedente == null) {
+            return false;
+        }
+        String sPronombre = fraseConPronombre.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+        String sAntecedente = etiquetaAntecedente.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+
+        sPronombre = sPronombre.replaceAll("^(el|la|los|las|un|una|unos|unas)\\s+", "");
+        sAntecedente = sAntecedente.replaceAll("^(el|la|los|las|un|una|unos|unas)\\s+", "");
+
+        String[] palabrasPronombre = sPronombre.split(" ");
+        if (palabrasPronombre.length < 2) {
+            return false;
+        }
+
+        String pronombre = palabrasPronombre[0];
+        if (!esPronombreAnaforico(pronombre)) {
+            return false;
+        }
+
+        String predicadoPronombre = String.join(" ", java.util.Arrays.copyOfRange(palabrasPronombre, 1, palabrasPronombre.length));
+
+        String[] palabrasAntecedente = sAntecedente.split(" ");
+        if (palabrasAntecedente.length < 2) {
+            return false;
+        }
+
+        for (int i = 1; i < palabrasAntecedente.length; i++) {
+            String subPredicado = String.join(" ", java.util.Arrays.copyOfRange(palabrasAntecedente, i, palabrasAntecedente.length));
+            if (sonFrasesEquivalentes(predicadoPronombre, subPredicado)) {
+                String sujetoAntecedente = String.join(" ", java.util.Arrays.copyOfRange(palabrasAntecedente, 0, i));
+                if (concuerdaGeneroYNumero(pronombre, sujetoAntecedente)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }

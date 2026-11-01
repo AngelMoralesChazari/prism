@@ -31,7 +31,7 @@ public final class RegistroProposiciones {
         if (flexivo != null) {
             claveASimbolo.put(clave, flexivo);
             if (pasosDeAnalisis != null) {
-                pasosDeAnalisis.add("Asociación por equivalencia flexiva (indicativo/subjuntivo): \""
+                pasosDeAnalisis.add("Asociación por equivalencia flexiva/anáfora: \""
                         + clave + "\" → " + flexivo);
             }
             return flexivo;
@@ -53,6 +53,9 @@ public final class RegistroProposiciones {
                 continue;
             }
             if (NormalizadorMorfologico.sonFrasesEquivalentes(clave, etiqueta)) {
+                return simbolo;
+            }
+            if (NormalizadorMorfologico.coincideAnafora(clave, etiqueta)) {
                 return simbolo;
             }
         }

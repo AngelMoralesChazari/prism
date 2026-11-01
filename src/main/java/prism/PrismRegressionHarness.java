@@ -193,6 +193,11 @@ public final class PrismRegressionHarness {
                 "El token de autenticacion expira o el cortafuegos bloquea la peticion, si y solo si no es verdad que el token no expire y el cortafuegos no bloquee la peticion",
                 true,
                 "((p " + OR + " q) " + IFF + " \u00ac((\u00acp " + AND + " \u00acq)))"));
+        casos.add(new Caso(
+                "correferencia_pronombres_este_ella",
+                "Si la cola de mensajes esta vacia, entonces el procesador se suspende o la tarea se reintenta; pero no es verdad que este se suspenda o ella se reintente.",
+                true,
+                "((p " + IMP + " (q " + OR + " r)) " + AND + " \u00ac((q " + OR + " r)))"));
         casos.add(new Caso("vacio", "", false, ""));
         casos.add(new Caso("solo_espacios", "   \t  ", false, ""));
 

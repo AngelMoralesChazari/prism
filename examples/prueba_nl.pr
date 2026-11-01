@@ -2,10 +2,11 @@ module prueba_nl
 
 use core
 
-atom p = "El balanceador de carga redirige el tráfico"
-atom q = "El servidor web procesa la solicitud"
+atom p = "la cola de mensajes esta vacia"
+atom q = "el procesador se suspende"
+atom r = "la tarea se reintenta"
 
-nl premisa = "Si el balanceador de carga redirige el tráfico entonces el servidor web procesa la solicitud, y el balanceador de carga redirige el tráfico; pero no es verdad que el servidor web procese la solicitud."
+nl premisa = "Si la cola de mensajes está vacía, entonces el procesador se suspende o la tarea se reintenta; pero no es verdad que este se suspenda o ella se reintente."
 let equivalencia = translate(premisa)
 
 vertauto equivalencia {

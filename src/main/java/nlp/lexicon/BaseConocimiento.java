@@ -129,6 +129,10 @@ public class BaseConocimiento {
         String[] palabras = limpio.split(" ");
         for (int i = 0; i < palabras.length; i++) {
             String p = palabras[i].replaceAll("^[\\p{Punct}]+", "").replaceAll("[\\p{Punct}]+$", "");
+            if (i == 0 && NormalizadorMorfologico.esPronombreAnaforico(p)) {
+                palabras[i] = p;
+                continue;
+            }
             palabras[i] = canonicalizarPalabra(p);
         }
         return String.join(" ", palabras).trim();
