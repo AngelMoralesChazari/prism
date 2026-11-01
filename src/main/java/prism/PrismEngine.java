@@ -6,7 +6,9 @@ import prism.ir.AndExpr;
 import prism.ir.AtomExpr;
 import prism.ir.EmitidorFormula;
 import prism.ir.EquivExpr;
+import prism.ir.ImpExpr;
 import prism.ir.LogicExpr;
+import prism.ir.NegExpr;
 import prism.ir.OrExpr;
 import nlp.lexer.NaturalLexer;
 import nlp.lexer.TokenNatural;
@@ -34,7 +36,15 @@ public class PrismEngine {
     private final BaseConocimiento baseConocimiento = new BaseConocimiento(contenidoLgs);
     private final SemanticMapper semanticMapper = new SemanticMapper(baseConocimiento, contenidoLgs.patronesSemanticos());
 
+    public BaseConocimiento getBaseConocimiento() {
+        return baseConocimiento;
+    }
+
     public PrismResult traducir(String textoOriginal) {
+        return traducir(textoOriginal, null);
+    }
+
+    public PrismResult traducir(String textoOriginal, RegistroProposiciones registroPredefinido) {
         List<String> pasosDeAnalisis = new ArrayList<>();
 
         if (resultadoCargaLgs.bloqueaTraduccion()) {
@@ -46,7 +56,7 @@ public class PrismEngine {
                     + " Se usan lemas y patrones embebidos.");
         }
 
-        RegistroProposiciones registro = new RegistroProposiciones();
+        RegistroProposiciones registro = registroPredefinido != null ? registroPredefinido : new RegistroProposiciones();
 
         String texto = normalizador.normalizar(textoOriginal);
         if (texto.isEmpty()) {
@@ -71,10 +81,57 @@ public class PrismEngine {
                 registro.mapaParaResultado());
     }
 
+    private static record ConectorMatch(int indice, int longitud) {}
+
+    private static ConectorMatch encontrarSeparadorDiscursivo(String s) {
+        String[] conPuntuacion = {
+                ", pero ",
+                ", sin embargo, ",
+                ", sin embargo ",
+                ", no obstante, ",
+                ", no obstante ",
+                "; pero ",
+                "; "
+        };
+        for (String c : conPuntuacion) {
+            int idx = s.indexOf(c);
+            if (idx > 0) {
+                return new ConectorMatch(idx, c.length());
+            }
+        }
+        String[] sinPuntuacion = {
+                " sin embargo ",
+                " no obstante ",
+                " pero "
+        };
+        for (String c : sinPuntuacion) {
+            int idx = s.indexOf(c);
+            if (idx > 0) {
+                return new ConectorMatch(idx, c.length());
+            }
+        }
+        return null;
+    }
+
     private LogicExpr traducirJerarquico(String texto, List<String> pasosDeAnalisis) {
         String limpio = limpiarSegmento(texto);
         if (limpio.isEmpty()) {
             return null;
+        }
+
+        // 0. Coordinación discursiva inter-oracional (adversativas y coordinadas de nivel superior: ", pero ", etc.)
+        ConectorMatch matchDiscursivo = encontrarSeparadorDiscursivo(limpio);
+        if (matchDiscursivo != null) {
+            String izqTexto = limpiarSegmento(limpio.substring(0, matchDiscursivo.indice()));
+            String derTexto = limpiarSegmento(limpio.substring(matchDiscursivo.indice() + matchDiscursivo.longitud()));
+            if (!izqTexto.isEmpty() && !derTexto.isEmpty()) {
+                pasosDeAnalisis.add("Jerarquía: coordinación adversativa/discursiva (∧) conectando dos cláusulas.");
+                LogicExpr izq = traducirJerarquico(izqTexto, pasosDeAnalisis);
+                LogicExpr der = traducirJerarquico(derTexto, pasosDeAnalisis);
+                if (izq != null && der != null) {
+                    return new AndExpr(izq, der);
+                }
+            }
         }
 
         // 1. Conector mayor: bicondicional "si y solo si"
@@ -108,8 +165,40 @@ public class PrismEngine {
             return acumulada;
         }
 
-        // 3. Cláusula base (mapeo léxico-semántico)
+        // 3. Negación oracional composicional ("no es cierto que [E]", "no es verdad que [E]", etc.)
+        String negadorEncontrado = encontrarPrefijoNegadorOracional(limpio);
+        if (negadorEncontrado != null) {
+            String resto = limpiarSegmento(limpio.substring(negadorEncontrado.length()));
+            if (!resto.isEmpty()) {
+                pasosDeAnalisis.add("Jerarquía: negación oracional (¬) envolviendo proposición subordinada.");
+                LogicExpr subExpr = traducirJerarquico(resto, pasosDeAnalisis);
+                if (subExpr != null) {
+                    return new NegExpr(subExpr);
+                }
+            }
+        }
+
+        // 4. Cláusula base (mapeo léxico-semántico)
         return traducirBloque(limpio, pasosDeAnalisis);
+    }
+
+    private static final String[] PREFIJOS_NEGADORES_ORACIONALES = {
+            "no es cierto que ",
+            "no es verdad que ",
+            "es falso que ",
+            "no ocurre que ",
+            "no se da que ",
+            "no se cumple que "
+    };
+
+    private static String encontrarPrefijoNegadorOracional(String s) {
+        String minuscula = s.toLowerCase();
+        for (String p : PREFIJOS_NEGADORES_ORACIONALES) {
+            if (minuscula.startsWith(p)) {
+                return p;
+            }
+        }
+        return null;
     }
 
     private static int encontrarConectorMayor(String s, String conector) {
