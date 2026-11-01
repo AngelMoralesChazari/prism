@@ -4,7 +4,7 @@
 version 0.6
 
 # --- Morfología declarativa (orden = prioridad; primera coincidencia gana) ---
-lexrule excluir gorra sombrero paraguas calor frio sol cielo nube nubes lluvia examen clase proceso sistema memoria datos red archivo servidor usuario
+lexrule excluir gorra sombrero paraguas calor frio sol cielo nube nubes lluvia examen clase proceso sistema memoria datos red archivo servidor usuario descanso descansar descansa desear deseo destino destacar
 
 lexrule sufijo iaria infinitivo ar
 lexrule sufijo aria infinitivo ar
@@ -112,6 +112,29 @@ lemma tengo -> tener
 lemma tienes -> tener
 lemma tiene -> tener
 lemma tienen -> tener
+
+# Verbos copulativos y auxiliares (ser y estar)
+lemma es -> ser
+lemma sea -> ser
+lemma son -> ser
+lemma sean -> ser
+lemma era -> ser
+lemma fue -> ser
+lemma fueron -> ser
+lemma sera -> ser
+lemma seria -> ser
+lemma esta -> estar
+lemma este -> estar
+lemma estan -> estar
+lemma esten -> estar
+lemma estuvo -> estar
+lemma estaba -> estar
+
+# --- Morfología declarativa: patrones de prefijación privativa (oposición polar) ---
+lexrule prefijo des privativo
+lexrule prefijo in privativo
+lexrule prefijo im privativo
+lexrule prefijo i privativo
 
 # Patrones semánticos (orden = prioridad de coincidencia: más específicos primero)
 

@@ -96,9 +96,11 @@ public final class LgsCargador {
 
     public static ContenidoLgs cargar(InputStream entrada) throws IOException {
         Map<String, String> lemas = new LinkedHashMap<>();
+        Map<String, String> antonimos = new LinkedHashMap<>();
         List<PatronSemanticoLgs> patrones = new ArrayList<>();
         List<ReglaMorfologicaLgs> reglasMorfologicas = new ArrayList<>();
         Set<String> exclusionesMorfologicas = new LinkedHashSet<>();
+        Set<String> prefijosPrivativos = new LinkedHashSet<>();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(entrada, StandardCharsets.UTF_8))) {
             String linea;
             int num = 0;
@@ -116,8 +118,12 @@ public final class LgsCargador {
                     parsearLemma(num, t, lemas);
                     continue;
                 }
+                if (tl.startsWith("antonym ")) {
+                    parsearAntonym(num, t, antonimos);
+                    continue;
+                }
                 if (tl.startsWith("lexrule ")) {
-                    parsearLexrule(num, t, reglasMorfologicas, exclusionesMorfologicas);
+                    parsearLexrule(num, t, reglasMorfologicas, exclusionesMorfologicas, prefijosPrivativos);
                     continue;
                 }
                 if (tl.startsWith("pattern ")) {
@@ -128,8 +134,8 @@ public final class LgsCargador {
             }
         }
         ConfiguracionMorfologiaLgs morfologia =
-                new ConfiguracionMorfologiaLgs(reglasMorfologicas, exclusionesMorfologicas);
-        return new ContenidoLgs(lemas, patrones, morfologia);
+                new ConfiguracionMorfologiaLgs(reglasMorfologicas, exclusionesMorfologicas, prefijosPrivativos);
+        return new ContenidoLgs(lemas, patrones, morfologia, antonimos);
     }
 
     public static Map<String, String> cargarLemas(InputStream entrada) throws IOException {
@@ -150,11 +156,26 @@ public final class LgsCargador {
         lemas.put(forma, lema);
     }
 
+    private static void parsearAntonym(int numLinea, String linea, Map<String, String> antonimos) throws IOException {
+        String resto = linea.substring(8).trim();
+        int flecha = resto.indexOf("->");
+        if (flecha < 0) {
+            throw new IOException("Línea " + numLinea + ": falta '->' en antonym: " + linea);
+        }
+        String negada = resto.substring(0, flecha).trim().toLowerCase(Locale.ROOT);
+        String positiva = resto.substring(flecha + 2).trim().toLowerCase(Locale.ROOT);
+        if (negada.isEmpty() || positiva.isEmpty()) {
+            throw new IOException("Línea " + numLinea + ": forma negada o positiva vacía en antonym: " + linea);
+        }
+        antonimos.put(negada, positiva);
+    }
+
     private static void parsearLexrule(
             int numLinea,
             String linea,
             List<ReglaMorfologicaLgs> reglas,
-            Set<String> exclusiones) throws IOException {
+            Set<String> exclusiones,
+            Set<String> prefijosPrivativos) throws IOException {
         String resto = linea.substring(8).trim();
         if (resto.isEmpty()) {
             throw new IOException("Línea " + numLinea + ": lexrule sin cuerpo: " + linea);
@@ -173,8 +194,20 @@ public final class LgsCargador {
             }
             return;
         }
+        if ("prefijo".equals(tipo)) {
+            if (partes.length < 2) {
+                throw new IOException("Línea " + numLinea + ": lexrule prefijo requiere al menos un prefijo: " + linea);
+            }
+            for (int i = 1; i < partes.length; i++) {
+                String p = partes[i].trim().toLowerCase(Locale.ROOT);
+                if (!p.isEmpty() && !"privativo".equals(p)) {
+                    prefijosPrivativos.add(p);
+                }
+            }
+            return;
+        }
         if (!"sufijo".equals(tipo)) {
-            throw new IOException("Línea " + numLinea + ": lexrule debe empezar por excluir o sufijo: " + linea);
+            throw new IOException("Línea " + numLinea + ": lexrule debe empezar por excluir, prefijo o sufijo: " + linea);
         }
         if (partes.length < 3) {
             throw new IOException("Línea " + numLinea + ": lexrule sufijo incompleta: " + linea);

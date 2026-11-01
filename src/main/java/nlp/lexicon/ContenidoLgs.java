@@ -12,15 +12,24 @@ public final class ContenidoLgs {
     private final Map<String, String> lemas;
     private final List<PatronSemanticoLgs> patronesSemanticos;
     private final ConfiguracionMorfologiaLgs morfologia;
+    private final Map<String, String> antonimos;
 
     public ContenidoLgs(Map<String, String> lemas, List<PatronSemanticoLgs> patronesSemanticos) {
-        this(lemas, patronesSemanticos, ConfiguracionMorfologiaLgs.vacia());
+        this(lemas, patronesSemanticos, ConfiguracionMorfologiaLgs.vacia(), Map.of());
     }
 
     public ContenidoLgs(
             Map<String, String> lemas,
             List<PatronSemanticoLgs> patronesSemanticos,
             ConfiguracionMorfologiaLgs morfologia) {
+        this(lemas, patronesSemanticos, morfologia, Map.of());
+    }
+
+    public ContenidoLgs(
+            Map<String, String> lemas,
+            List<PatronSemanticoLgs> patronesSemanticos,
+            ConfiguracionMorfologiaLgs morfologia,
+            Map<String, String> antonimos) {
         this.lemas = lemas == null || lemas.isEmpty()
                 ? Map.of()
                 : Collections.unmodifiableMap(Map.copyOf(lemas));
@@ -28,6 +37,9 @@ public final class ContenidoLgs {
                 ? List.of()
                 : List.copyOf(patronesSemanticos);
         this.morfologia = morfologia == null ? ConfiguracionMorfologiaLgs.vacia() : morfologia;
+        this.antonimos = antonimos == null || antonimos.isEmpty()
+                ? Map.of()
+                : Collections.unmodifiableMap(Map.copyOf(antonimos));
     }
 
     public Map<String, String> lemas() {
@@ -42,7 +54,11 @@ public final class ContenidoLgs {
         return morfologia;
     }
 
+    public Map<String, String> antonimos() {
+        return antonimos;
+    }
+
     public static ContenidoLgs vacio() {
-        return new ContenidoLgs(Map.of(), List.of(), ConfiguracionMorfologiaLgs.vacia());
+        return new ContenidoLgs(Map.of(), List.of(), ConfiguracionMorfologiaLgs.vacia(), Map.of());
     }
 }
