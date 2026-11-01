@@ -1,0 +1,14 @@
+module test
+
+use core
+
+atom p = "proposicion_a"
+atom q = "proposicion_b"
+
+formula f = p impl q
+
+vertauto f {
+    steps
+    table
+    verdict
+}

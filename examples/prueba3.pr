@@ -1,0 +1,12 @@
+# Contradicción p ∧ ¬p
+# Ejecutar: java -cp out prism.pr.PrcCli run examples/prueba3.pr
+
+module prueba3
+
+use core
+
+atom p = "llover"
+
+formula f = p and not p 
+
+vertauto f

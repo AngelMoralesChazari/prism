@@ -1,0 +1,15 @@
+# translate con texto literal (sin nl intermedio)
+# Ejecutar: java -cp out prism.pr.PrcCli run examples/translate_literal.pr
+
+module translate_literal
+
+use core
+
+atom p = "estudio"
+atom q = "apruebo"
+
+let implicacion = translate("si estudio apruebo")
+
+vertauto implicacion { 
+    steps 
+}

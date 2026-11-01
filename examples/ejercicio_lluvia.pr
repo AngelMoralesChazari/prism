@@ -1,0 +1,19 @@
+# Prism v1.0 — ejemplo canónico: implicación desde lenguaje natural
+# Guía: documentacion Prism/GUIA-RAPIDA-EJERCICIOS.md
+# Ejecutar: java -cp out prism.pr.PrcCli run examples/ejercicio_lluvia.pr
+
+module ejercicio_lluvia
+
+use core
+
+atom p = "llueve"
+atom q = "paraguas"
+
+nl linea_lluvia = "si llueve llevo paraguas"
+let implicacion = translate(linea_lluvia)
+
+vertauto implicacion {
+    steps
+    table
+    verdict
+}
