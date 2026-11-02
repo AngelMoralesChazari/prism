@@ -221,6 +221,15 @@ public final class NormalizadorMorfologico {
             return true;
         }
 
+        // 4. Alternancias entre formas en infinitivo (-ar / -er) y formas conjugadas (-en, -an, -e, -a)
+        if (coincidenAlternancia(a, b, "ar", "en") || coincidenAlternancia(a, b, "en", "ar")
+                || coincidenAlternancia(a, b, "er", "an") || coincidenAlternancia(a, b, "an", "er")
+                || coincidenAlternancia(a, b, "ar", "e") || coincidenAlternancia(a, b, "e", "ar")
+                || coincidenAlternancia(a, b, "er", "a") || coincidenAlternancia(a, b, "a", "er")
+                || coincidenAlternancia(a, b, "ar", "er") || coincidenAlternancia(a, b, "er", "ar")) {
+            return true;
+        }
+
         return false;
     }
 
@@ -321,7 +330,88 @@ public final class NormalizadorMorfologico {
             }
         }
 
+        // Reducción de modificadores adverbiales accesorios (p. ej. "responde rapidamente" <-> "responde")
+        String adv1 = eliminarAdverbiosAccesorios(s1);
+        String adv2 = eliminarAdverbiosAccesorios(s2);
+        if (!adv1.equals(s1) || !adv2.equals(s2)) {
+            if (adv1.equals(adv2)) {
+                return true;
+            }
+            if (adv1.length() >= 5 && adv2.length() >= 5 && (adv1.endsWith(" " + adv2) || adv2.endsWith(" " + adv1))) {
+                return true;
+            }
+            if (sonPalabrasEquivalentes(adv1.split(" "), adv2.split(" "))) {
+                return true;
+            }
+            // Combinación: reducción de modificadores adverbiales + complemento del nombre (de X)
+            String redAdv1 = adv1.replaceAll(patronDe, " ").replaceAll("\\s+", " ").trim();
+            String redAdv2 = adv2.replaceAll(patronDe, " ").replaceAll("\\s+", " ").trim();
+            if (sonPalabrasEquivalentes(redAdv1.split(" "), redAdv2.split(" "))) {
+                return true;
+            }
+        }
+
         return false;
+    }
+
+    // --- Módulo de Modificadores Adverbiales Accesorios ---
+
+    private static final java.util.regex.Pattern PATRON_LOCUCION_MODAL = java.util.regex.Pattern.compile(
+            "\\bde\\s+(?:manera|forma|modo)\\s+(?:(?:muy|tan|bastante)\\s+)?[\\w]+\\b",
+            java.util.regex.Pattern.CASE_INSENSITIVE
+    );
+
+    private static final java.util.regex.Pattern PATRON_INTENSIFICADOR_MENTE = java.util.regex.Pattern.compile(
+            "\\b(?:muy|tan|bastante)\\s+(?=[\\w]*mente\\b)",
+            java.util.regex.Pattern.CASE_INSENSITIVE
+    );
+
+    /**
+     * Determina morfológicamente si una palabra corresponde a un modificador adverbial accesorio
+     * derivado sobre base adjetival con sufijo regular {@code -mente} (e.g. rápida-mente, exitosa-mente).
+     * Discrimina formalmente frente a conjugaciones verbales en subjuntivo de verbos en {@code -mentar}
+     * (e.g. experimente, implemente, documente).
+     */
+    public static boolean esAdverbioAccesorio(String palabra) {
+        if (palabra == null || palabra.length() < 7) {
+            return false;
+        }
+        String p = palabra.toLowerCase(Locale.ROOT);
+        if (!p.endsWith("mente")) {
+            return false;
+        }
+        // Desinencias morfológicas regulares del adjetivo antepuesto al sufijo -mente
+        return p.endsWith("amente")
+                || p.endsWith("lmente")
+                || p.endsWith("temente")
+                || p.endsWith("blemente")
+                || p.endsWith("zmente")
+                || p.endsWith("rmente")
+                || p.endsWith("simamente");
+    }
+
+    /**
+     * Abstrae modificadores adverbiales de modo o tiempo que actúan como adjuntos verbales
+     * accesorios en proposiciones atómicas.
+     */
+    public static String eliminarAdverbiosAccesorios(String frase) {
+        if (frase == null || frase.isBlank()) {
+            return frase;
+        }
+        String limpia = PATRON_LOCUCION_MODAL.matcher(frase).replaceAll(" ");
+        limpia = PATRON_INTENSIFICADOR_MENTE.matcher(limpia).replaceAll(" ");
+        String[] palabras = limpia.trim().split("\\s+");
+        java.util.List<String> filtradas = new java.util.ArrayList<>();
+        for (String p : palabras) {
+            String pLimpia = p.replaceAll("^[\\p{Punct}]+", "").replaceAll("[\\p{Punct}]+$", "");
+            if (!esAdverbioAccesorio(pLimpia)) {
+                filtradas.add(p);
+            }
+        }
+        if (filtradas.isEmpty()) {
+            return frase;
+        }
+        return String.join(" ", filtradas).replaceAll("\\s+", " ").trim();
     }
 
     private static boolean sonPalabrasEquivalentes(String[] p1, String[] p2) {
@@ -395,6 +485,11 @@ public final class NormalizadorMorfologico {
     }
 
     public static boolean concuerdaGeneroYNumero(String pronombre, String sujetoAntecedente) {
+        return concuerdaGeneroYNumero(pronombre, sujetoAntecedente, false, false);
+    }
+
+    public static boolean concuerdaGeneroYNumero(
+            String pronombre, String sujetoAntecedente, boolean articuloMasc, boolean articuloFem) {
         GeneroGramatical gP = generoPronombre(pronombre);
         NumeroGramatical nP = numeroPronombre(pronombre);
         if (gP == GeneroGramatical.NEUTRO || gP == GeneroGramatical.INDIFERENTE) {
@@ -410,8 +505,22 @@ public final class NormalizadorMorfologico {
             return false;
         }
 
-        boolean esFemeninoSujeto = s.startsWith("la ") || s.startsWith("una ") || s.startsWith("las ") || s.startsWith("unas ")
-                || s.endsWith("a") || s.endsWith("as") || s.contains(" cion") || s.contains(" dad") || s.contains(" tud");
+        boolean esFemeninoSujeto;
+        if (articuloMasc) {
+            esFemeninoSujeto = false;
+        } else if (articuloFem) {
+            esFemeninoSujeto = true;
+        } else {
+            // Sin artículo explícito: sustantivos en -ma (de origen griego: el sistema, el programa) son masculinos
+            boolean esMasculinoMa = s.endsWith("ma") || s.endsWith("mas");
+            if (esMasculinoMa) {
+                esFemeninoSujeto = false;
+            } else {
+                esFemeninoSujeto = s.startsWith("la ") || s.startsWith("una ") || s.startsWith("las ") || s.startsWith("unas ")
+                        || s.endsWith("a") || s.endsWith("as") || s.contains(" cion") || s.contains(" dad") || s.contains(" tud");
+            }
+        }
+
         if (gP == GeneroGramatical.FEMENINO) {
             return esFemeninoSujeto;
         }
@@ -430,10 +539,12 @@ public final class NormalizadorMorfologico {
             return false;
         }
         String sPronombre = fraseConPronombre.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
-        String sAntecedente = etiquetaAntecedente.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+        String sAntecedenteRaw = etiquetaAntecedente.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
 
-        sPronombre = sPronombre.replaceAll("^(el|la|los|las|un|una|unos|unas)\\s+", "");
-        sAntecedente = sAntecedente.replaceAll("^(el|la|los|las|un|una|unos|unas)\\s+", "");
+        boolean articuloMasc = sAntecedenteRaw.matches("^(el|un|los|unos)\\s+.*");
+        boolean articuloFem = sAntecedenteRaw.matches("^(la|una|las|unas)\\s+.*");
+
+        String sAntecedente = sAntecedenteRaw.replaceAll("^(el|la|los|las|un|una|unos|unas)\\s+", "");
 
         String[] palabrasPronombre = sPronombre.split(" ");
         if (palabrasPronombre.length < 2) {
@@ -456,7 +567,7 @@ public final class NormalizadorMorfologico {
             String subPredicado = String.join(" ", java.util.Arrays.copyOfRange(palabrasAntecedente, i, palabrasAntecedente.length));
             if (sonFrasesEquivalentes(predicadoPronombre, subPredicado)) {
                 String sujetoAntecedente = String.join(" ", java.util.Arrays.copyOfRange(palabrasAntecedente, 0, i));
-                if (concuerdaGeneroYNumero(pronombre, sujetoAntecedente)) {
+                if (concuerdaGeneroYNumero(pronombre, sujetoAntecedente, articuloMasc, articuloFem)) {
                     return true;
                 }
             }

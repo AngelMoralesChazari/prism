@@ -198,6 +198,21 @@ public final class PrismRegressionHarness {
                 "Si la cola de mensajes esta vacia, entonces el procesador se suspende o la tarea se reintenta; pero no es verdad que este se suspenda o ella se reintente.",
                 true,
                 "((p " + IMP + " (q " + OR + " r)) " + AND + " \u00ac((q " + OR + " r)))"));
+        casos.add(new Caso(
+                "correferencia_pronombres_ellos_ellas",
+                "Si los procesadores se suspenden entonces las tareas se reintentan; pero no es verdad que ellos se suspendan o ellas se reintenten.",
+                true,
+                "((p " + IMP + " q) " + AND + " \u00ac((p " + OR + " q)))"));
+        casos.add(new Caso(
+                "modificadores_adverbiales_accesorios_mente",
+                "Si el sistema responde rapidamente, entonces la tarea finaliza exitosamente.",
+                true,
+                "(p " + IMP + " q)"));
+        casos.add(new Caso(
+                "modificadores_adverbiales_intensificador_y_locucion",
+                "Si el token expira muy rapidamente, entonces el cortafuegos bloquea la peticion de manera automatica.",
+                true,
+                "(p " + IMP + " q)"));
         casos.add(new Caso("vacio", "", false, ""));
         casos.add(new Caso("solo_espacios", "   \t  ", false, ""));
 
