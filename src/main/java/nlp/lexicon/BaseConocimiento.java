@@ -120,9 +120,12 @@ public class BaseConocimiento {
             return "";
         }
 
+        boolean eraSujetoPlural = limpio.matches("^(los|las|unos|unas)\\s+.*");
         limpio = java.text.Normalizer.normalize(limpio, java.text.Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         limpio = limpio.replaceAll("^[\\p{Punct}\\s]+", "").replaceAll("[\\p{Punct}\\s]+$", "");
-        limpio = limpio.replaceAll("^(el|la|los|las|un|una|unos|unas)\\s+", "");
+        if (!esPronombrePersonalInicial(limpio, fragmento)) {
+            limpio = limpio.replaceAll("^(el|la|los|las|un|una|unos|unas)\\s+", "");
+        }
         limpio = limpio.replaceAll("[\\p{Punct}\\s]+$", "");
         limpio = limpio.replaceAll("\\s+", " ").trim();
 
@@ -130,6 +133,10 @@ public class BaseConocimiento {
         for (int i = 0; i < palabras.length; i++) {
             String p = palabras[i].replaceAll("^[\\p{Punct}]+", "").replaceAll("[\\p{Punct}]+$", "");
             if (i == 0 && NormalizadorMorfologico.esPronombreAnaforico(p)) {
+                palabras[i] = p;
+                continue;
+            }
+            if (i == 0 && eraSujetoPlural && (p.endsWith("s") || p.endsWith("es"))) {
                 palabras[i] = p;
                 continue;
             }
@@ -171,5 +178,21 @@ public class BaseConocimiento {
         lemas.put("este", "estar");
         lemas.put("estan", "estar");
         lemas.put("esten", "estar");
+    }
+
+    private static boolean esPronombrePersonalInicial(String limpio, String original) {
+        if (original != null && original.matches("(?i)^[\\p{Punct}\\s]*él\\b.*")) {
+            return true;
+        }
+        if (!limpio.startsWith("el ") && !limpio.startsWith("ella ") && !limpio.startsWith("ellos ") && !limpio.startsWith("ellas ")) {
+            return false;
+        }
+        String[] partes = limpio.split("\\s+");
+        if (partes.length < 2) {
+            return false;
+        }
+        String p2 = partes[1];
+        return "se".equals(p2) || "no".equals(p2) || "me".equals(p2) || "te".equals(p2)
+                || "le".equals(p2) || "lo".equals(p2) || "nos".equals(p2);
     }
 }

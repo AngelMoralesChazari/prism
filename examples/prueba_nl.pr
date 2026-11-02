@@ -2,11 +2,10 @@ module prueba_nl
 
 use core
 
-atom p = "la cola de mensajes esta vacia"
-atom q = "el procesador se suspende"
-atom r = "la tarea se reintenta"
+atom p = "el procesador se suspende"
+atom q = "la tarea se reintenta"
 
-nl premisa = "Si la cola de mensajes está vacía, entonces el procesador se suspende o la tarea se reintenta; pero no es verdad que este se suspenda o ella se reintente."
+nl premisa = "Si el procesador se suspende entonces la tarea se reintenta; pero no es verdad que él se suspenda o ella se reintente."
 let equivalencia = translate(premisa)
 
 vertauto equivalencia {
