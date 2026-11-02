@@ -2,12 +2,17 @@ module prueba_nl
 
 use core
 
+# 1. El enunciado del problema (lenguaje natural)
+nl premisa = "Si el procesador se suspende entonces la tarea se reintenta; pero no es verdad que él se suspenda o ella se reintente."
+
+# 2. Definición formal de proposiciones atómicas (p, q, ...)
 atom p = "el procesador se suspende"
 atom q = "la tarea se reintenta"
 
-nl premisa = "Si el procesador se suspende entonces la tarea se reintenta; pero no es verdad que él se suspenda o ella se reintente."
+# 3. Traducción y formalización lógica
 let equivalencia = translate(premisa)
 
+# 4. Construcción de tabla de verdad y dictamen
 vertauto equivalencia {
     steps
     table
