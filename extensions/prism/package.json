@@ -2,7 +2,7 @@
   "name": "prism",
   "displayName": "Prism",
   "description": "Sintaxis, autocompletado y diagnósticos visuales en tiempo real para Prism (.pr)",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "prism",
   "icon": "./icons/Prismv1.png",
   "main": "./extension.js",
@@ -24,6 +24,15 @@
         "category": "Prism"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "prism.toggleBlockComment",
+          "group": "1_modification",
+          "when": "editorLangId == 'prism'"
+        }
+      ]
+    },
     "keybindings": [
       {
         "command": "prism.toggleBlockComment",
