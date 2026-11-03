@@ -53,17 +53,17 @@ dependencies {
 
 ## 3. Módulo de Lenguaje Natural (`logicscript`)
 
-### 📦 `logicscript.LogicScriptService`
+### `logicscript.LogicScriptService`
 Es la **fachada principal** para traducir español controlado a lógica proposicional formal.
 
-#### ✅ Qué hace:
+#### Qué hace:
 * Recibe oraciones en español (ej. `"si estudio apruebo"` o `"llueve o truena"`).
 * Carga automáticamente el conocimiento léxico y sintáctico (`core.lgs`).
 * Aplica normalización, lematización, análisis sintáctico y mapeo semántico.
 * Asigna variables atómicas proposicionales (`p`, `q`, `r`...).
 * Construye el árbol lógico IR y emite la fórmula simbólica.
 
-#### ❌ Qué NO hace:
+#### Qué NO hace:
 * **No calcula tablas de verdad ni dictámenes** (para eso se usa `VertautoService`).
 * **No ejecuta scripts `.ls`** (para eso se usa `LsInterpreter`).
 * **No lanza excepciones no controladas** si la frase no se entiende; en su lugar, devuelve un `LogicScriptResult` con `isExito() == false`.
@@ -88,17 +88,17 @@ if (resultado.isExito()) {
 
 ---
 
-### 📦 `logicscript.LogicScriptResult`
+### `logicscript.LogicScriptResult`
 Es el **DTO inmutable** que encapsula el resultado del proceso de traducción.
 
-#### ✅ Qué hace:
+#### Qué hace:
 * Informa si el procesamiento tuvo éxito (`isExito()`).
 * Contiene la fórmula resultante en formato cadena (ej. `"(p → q)"`).
 * Ofrece el mapa de correspondencia entre fragmentos de texto y variables proposicionales (ej. `{llueve=p, paraguas=q}`).
 * Contiene la traza detallada paso a paso del análisis lingüístico (`getPasosDeAnalisis()`).
 * Devuelve el mensaje de error o éxito (`getMensaje()`).
 
-#### ❌ Qué NO hace:
+#### Qué NO hace:
 * No permite mutar sus datos (es de solo lectura).
 * No realiza validaciones adicionales.
 
@@ -115,16 +115,16 @@ Es el **DTO inmutable** que encapsula el resultado del proceso de traducción.
 
 ## 4. Módulo de Tablas de Verdad y Evaluación (`logicscript.vertauto`)
 
-### 📦 `logicscript.vertauto.VertautoService`
+### `logicscript.vertauto.VertautoService`
 Es el motor encargado de evaluar la semántica formal de una proposición y calcular su tabla de verdad.
 
-#### ✅ Qué hace:
+#### Qué hace:
 * Evalúa fórmulas en **notación clásica**: `(p → q)`, `(p ∧ ¬q)`, `(p ∨ q)`.
 * Evalúa expresiones en **sintaxis LogicScript**: `p or not p`, `p impl q`.
 * Permite evaluar directamente desde español (`vertautoDesdeNl`), combinando traducción y evaluación en una sola llamada.
 * Determina el espacio de estados ($2^n$ filas) y calcula el resultado booleano de cada fila.
 
-#### ❌ Qué NO hace:
+#### Qué NO hace:
 * No guarda memoria entre evaluaciones; cada llamada es pura e independiente.
 
 #### Métodos principales:
@@ -155,17 +155,17 @@ res.imprimirModoCorto(); // Imprime en consola: (p ∨ ¬p)  tautology
 
 ---
 
-### 📦 `logicscript.vertauto.VertautoResult`
+### `logicscript.vertauto.VertautoResult`
 Es el objeto que contiene el análisis de verdad completo.
 
-#### ✅ Qué hace:
+#### Qué hace:
 * Almacena el dictamen formal (`TipoDictamen`).
 * Lista de variables atómicas involucradas (`getAtomos()`).
 * Lista de filas calculadas (`getFilasTabla()`).
 * Pasos paso a paso de evaluación (`getPasosEvaluacion()`).
 * Métodos de utilidad para imprimir formateado en consola: `imprimirModoCorto()` y `imprimirExtendido(steps, table, verdict)`.
 
-#### ❌ Qué NO hace:
+#### Qué NO hace:
 * No recalcula filas; es un reporte estático.
 
 #### Métodos principales:
@@ -179,7 +179,7 @@ Es el objeto que contiene el análisis de verdad completo.
 
 ---
 
-### 📦 `logicscript.vertauto.TipoDictamen` (Enum)
+### `logicscript.vertauto.TipoDictamen` (Enum)
 Representa los tres posibles veredictos lógicos:
 ```java
 public enum TipoDictamen {
@@ -193,16 +193,16 @@ public enum TipoDictamen {
 
 ## 5. Módulo del Lenguaje Declarativo (`logicscript.ls`)
 
-### 📦 `logicscript.ls.LsInterpreter`
+### `logicscript.ls.LsInterpreter`
 Es el **intérprete oficial** para ejecutar programas escritos en el lenguaje `.ls` directamente desde código Java.
 
-#### ✅ Qué hace:
+#### Qué hace:
 * Ejecuta archivos `.ls` completos leyendo desde el disco (`ejecutarArchivo(ruta)`).
 * O ejecuta un AST parsed (`ejecutar(LsProgram)`).
 * Soporta todas las sentencias del lenguaje: `module`, `use`, `atom`, `nl`, `let translate(...)`, `formula`, y `vertauto`.
 * Imprime automáticamente los pasos, tablas de verdad y dictámenes configurados en el archivo `.ls`.
 
-#### ❌ Qué NO hace:
+#### Qué NO hace:
 * **No compila a archivos `.class` de bytecode** (funciona como un intérprete dinámico en memoria).
 * No permite importar módulos externos además de `core`.
 
@@ -232,7 +232,7 @@ public class EjecutorDemo {
 
 Para proyectos avanzados que necesitan manipular matemáticamente las expresiones lógicas en memoria como árboles de objetos:
 
-### 📦 `logicscript.ir.LogicExpr` (Interface Sellada)
+### `logicscript.ir.LogicExpr` (Interface Sellada)
 Es el contrato raíz para cualquier nodo del árbol de sintaxis abstracta lógica.
 
 Nodos disponibles:
@@ -243,7 +243,7 @@ Nodos disponibles:
 * **`ImpExpr(LogicExpr left, LogicExpr right)`**: Condicional / Implicación (`A → B`).
 * **`EquivExpr(LogicExpr left, LogicExpr right)`**: Bicondicional / Equivalencia (`A ↔ B`).
 
-### 📦 `logicscript.ir.EmitidorFormula`
+### `logicscript.ir.EmitidorFormula`
 Convierte cualquier árbol `LogicExpr` en una cadena formateada legible:
 
 ```java
@@ -280,15 +280,15 @@ public class ValidadorTutor {
         LogicScriptResult trad = nlService.traducir(entradaEstudiante);
 
         if (!trad.isExito()) {
-            System.out.println("❌ No se pudo formalizar: " + trad.getMensaje());
+            System.out.println("No se pudo formalizar: " + trad.getMensaje());
             return;
         }
 
-        System.out.println("✔️ Formalización: " + trad.getFormula());
-        System.out.println("📌 Proposiciones: " + trad.getProposiciones());
+        System.out.println("Formalización: " + trad.getFormula());
+        System.out.println("Proposiciones: " + trad.getProposiciones());
 
         VertautoResult evaluacion = vertautoService.vertautoClasica(trad.getFormula());
-        System.out.println("⚖️ Veredicto: " + evaluacion.getDictamen());
+        System.out.println("Veredicto: " + evaluacion.getDictamen());
     }
 }
 ```

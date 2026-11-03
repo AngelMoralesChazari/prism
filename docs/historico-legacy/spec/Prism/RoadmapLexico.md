@@ -23,7 +23,7 @@ Los `pattern` **no** reemplazan los `lemma` ni la morfología: resuelven problem
 
 ---
 
-## Fase A — Normalizador morfológico ✅
+## Fase A — Normalizador morfológico
 
 **Estado:** implementado en v0.4.
 
@@ -39,7 +39,7 @@ Los `pattern` **no** reemplazan los `lemma` ni la morfología: resuelven problem
 
 ---
 
-## Fase B — Más patrones semánticos ✅
+## Fase B — Más patrones semánticos
 
 **Estado:** implementado en v0.5.
 
@@ -57,7 +57,7 @@ Los `pattern` **no** reemplazan los `lemma` ni la morfología: resuelven problem
 
 ---
 
-## Fase C — `lexrule` en `.lgs` ✅
+## Fase C — `lexrule` en `.lgs`
 
 **Estado:** implementado en v0.6.
 

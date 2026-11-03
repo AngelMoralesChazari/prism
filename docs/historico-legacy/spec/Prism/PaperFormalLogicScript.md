@@ -231,7 +231,7 @@ Se adoptan **símbolos universitarios** (`¬`, `∧`, `∨`, `→`) por:
                     └──────────┬──────────┘
                                ▼
                     ┌─────────────────────┐
-                    │ EmitidorFormula     │──► cadena en 𝒻
+                    │ EmitidorFormula     │──► cadena en f
                     │ + RegistroProps.    │
                     └──────────┬──────────┘
                                ▼
