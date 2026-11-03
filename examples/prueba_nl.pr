@@ -6,7 +6,7 @@ use core
 nl premisa = "Si el procesador se suspende entonces la tarea se reintenta; pero no es verdad que él se suspenda o ella se reintente."
 
 # 2. Definición formal de proposiciones atómicas (p, q, ...)
-atom p = "el procesador se suspende"
+atom p = "el procesador se apaga"
 atom q = "la tarea se reintenta"
 
 # 3. Traducción y formalización lógica
