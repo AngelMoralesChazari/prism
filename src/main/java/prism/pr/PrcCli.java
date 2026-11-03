@@ -26,14 +26,41 @@ public final class PrcCli {
             }
         } else if ("check".equals(comando)) {
             if (args.length < 2) {
-                System.err.println("Uso: prc check <archivo.pr>");
+                System.err.println("Uso: prc check [--json] <archivo.pr>");
+                System.exit(1);
+            }
+            boolean json = false;
+            String ruta = null;
+            for (int i = 1; i < args.length; i++) {
+                if ("--json".equals(args[i])) {
+                    json = true;
+                } else {
+                    ruta = args[i];
+                }
+            }
+            if (ruta == null) {
+                System.err.println("Uso: prc check [--json] <archivo.pr>");
                 System.exit(1);
             }
             try {
-                if (!PrChecker.checkArchivo(args[1])) {
-                    System.exit(1);
+                if (json) {
+                    java.util.List<PrDiagnostic> diags = PrChecker.diagnosticarArchivo(ruta);
+                    StringBuilder sb = new StringBuilder("[");
+                    for (int i = 0; i < diags.size(); i++) {
+                        if (i > 0) sb.append(",");
+                        sb.append(diags.get(i).toJson());
+                    }
+                    sb.append("]");
+                    System.out.println(sb);
+                    if (diags.stream().anyMatch(d -> "error".equals(d.severity()))) {
+                        System.exit(1);
+                    }
+                } else {
+                    if (!PrChecker.checkArchivo(ruta)) {
+                        System.exit(1);
+                    }
                 }
-            } catch (PrParseException e) {
+            } catch (Exception e) {
                 System.err.println(e.getMessage());
                 System.exit(1);
             }
