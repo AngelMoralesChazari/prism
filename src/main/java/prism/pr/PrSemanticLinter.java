@@ -154,19 +154,19 @@ public final class PrSemanticLinter {
 
             if (mejorClausula != null && maxCoincidencias > 0) {
                 autosUsados.add(mejorSimbolo);
-                sb.append("Sugerencia: Se detectó una cláusula no enlazada en el texto: \"")
+                sb.append("   Sugerencia: Se detectó una cláusula no enlazada en el texto: \"")
                         .append(mejorClausula).append("\" (asignada automáticamente al símbolo '")
                         .append(mejorSimbolo).append("').\n");
-                sb.append("      --> ¿Quisiste decir: atom ").append(huerfano).append(" = \"")
+                sb.append("   --> ¿Quisiste decir: atom ").append(huerfano).append(" = \"")
                         .append(mejorClausula).append("\"?");
             } else if (!clausulasAuto.isEmpty()) {
-                sb.append("Proposiciones detectadas en el texto que recibieron símbolos automáticos:\n");
+                sb.append("   Proposiciones detectadas en el texto que recibieron símbolos automáticos:\n");
                 for (Map.Entry<String, String> e : clausulasAuto.entrySet()) {
-                    sb.append("      - \"").append(e.getValue()).append("\" (símbolo '").append(e.getKey())
+                    sb.append("   - \"").append(e.getValue()).append("\" (símbolo '").append(e.getKey())
                             .append("')\n");
                 }
             } else {
-                sb.append("No se detectó ninguna proposición no enlazada en el texto analizado.");
+                sb.append("   No se detectó ninguna proposición no enlazada en el texto analizado.");
             }
             avisos.add(sb.toString());
         }
