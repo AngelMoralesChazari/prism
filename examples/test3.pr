@@ -1,0 +1,16 @@
+module test3
+
+use core
+
+nl premisa = "si p entonces q"
+
+atom p = "antecedente"
+atom q = "consecuente"
+
+let equivalencia = translate(premisa)
+
+vertauto equivalencia {
+    steps
+    table
+    verdict
+}

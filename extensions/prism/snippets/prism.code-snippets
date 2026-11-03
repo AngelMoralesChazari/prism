@@ -1,7 +1,7 @@
 {
   "Programa Prism (module + use core)": {
     "scope": "prism",
-    "prefix": ["prprog", "lsprog", "programa", "prog"],
+    "prefix": ["prog", "prprog"],
     "description": "Esqueleto de programa: module (nombre = archivo) + use core",
     "body": [
       "module ${1:${TM_FILENAME_BASE}}",
@@ -31,7 +31,7 @@
   },
   "let translate (variable nl)": {
     "scope": "prism",
-    "prefix": ["lettr", "translate", "lettranslate"],
+    "prefix": ["lettr", "translate"],
     "description": "let f = translate(variable_nl)",
     "body": ["let ${1:f} = translate(${2:variable_nl})"]
   },
@@ -81,7 +81,7 @@
   },
   "vertauto extendido": {
     "scope": "prism",
-    "prefix": ["vax", "vertautoext", "vertauto-full"],
+    "prefix": ["vax", "vertautoext"],
     "description": "vertauto f { steps table verdict }",
     "body": [
       "vertauto ${1:f} {",
@@ -91,31 +91,9 @@
       "}"
     ]
   },
-  "ejercicio NL con translate literal": {
-    "scope": "prism",
-    "prefix": ["prnlit", "lsnlit", "ejercicionllit"],
-    "description": "NL directo: translate(\"literal\") sin nl intermedio",
-    "body": [
-      "module ${1:${TM_FILENAME_BASE}}",
-      "",
-      "use core",
-      "",
-      "atom ${2:p} = \"${3:antecedente}\"",
-      "atom ${4:q} = \"${5:consecuente}\"",
-      "",
-      "let ${6:implicacion} = translate(\"${7:si estudio apruebo}\")",
-      "",
-      "vertauto ${6:implicacion} {",
-      "    steps",
-      "    table",
-      "    verdict",
-      "}",
-      "$0"
-    ]
-  },
   "ejercicio NL → translate → vertauto": {
     "scope": "prism",
-    "prefix": ["prnl", "lsnl", "ejercicionl", "nlex"],
+    "prefix": ["nlex", "prnl"],
     "description": "Patrón canónico papel: module + use + nl + atom + let translate + vertauto",
     "body": [
       "module ${1:${TM_FILENAME_BASE}}",
@@ -137,9 +115,31 @@
       "$0"
     ]
   },
+  "ejercicio NL con translate literal": {
+    "scope": "prism",
+    "prefix": ["prnlit"],
+    "description": "NL directo: translate(\"literal\") sin nl intermedio",
+    "body": [
+      "module ${1:${TM_FILENAME_BASE}}",
+      "",
+      "use core",
+      "",
+      "atom ${2:p} = \"${3:antecedente}\"",
+      "atom ${4:q} = \"${5:consecuente}\"",
+      "",
+      "let ${6:implicacion} = translate(\"${7:si estudio apruebo}\")",
+      "",
+      "vertauto ${6:implicacion} {",
+      "    steps",
+      "    table",
+      "    verdict",
+      "}",
+      "$0"
+    ]
+  },
   "ejercicio fórmula simbólica": {
     "scope": "prism",
-    "prefix": ["prform", "lsform", "ejercicioform"],
+    "prefix": ["prform"],
     "description": "Patrón: átomos + formula + vertauto extendido",
     "body": [
       "module ${1:${TM_FILENAME_BASE}}",
@@ -161,7 +161,7 @@
   },
   "ejercicio vertauto directo (inline)": {
     "scope": "prism",
-    "prefix": ["prinl", "lsva", "ejercicioinline", "vainline"],
+    "prefix": ["prinl", "vainline"],
     "description": "Patrón directo: átomos + vertauto (expresión inline)",
     "body": [
       "module ${1:${TM_FILENAME_BASE}}",
