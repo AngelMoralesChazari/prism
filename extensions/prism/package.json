@@ -1,8 +1,8 @@
 {
   "name": "prism-lang",
-  "displayName": "Prism",
+  "displayName": "Prism Language",
   "description": "Sintaxis, autocompletado y diagnósticos visuales en tiempo real para Prism (.pr)",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "absoftwaregroup",
   "license": "MIT",
   "repository": {
