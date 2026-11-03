@@ -10,6 +10,7 @@ TautoTeacher2.0/
 *.iml
 .DS_Store
 
-# Documentación local larga (no versionar en el remoto)
+# Documentación local privada (no versionar en el repositorio remoto)
+docs/
 documentacion Prism/
 documentacion LogicScript/
