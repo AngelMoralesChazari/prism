@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import nlp.lexicon.ContenidoLgs;
@@ -40,6 +41,7 @@ public final class PrismRegressionHarness {
         fallos += verificarDiagnosticoCargaLgs();
         fallos += verificarLexruleCarga();
         fallos += verificarDosPasadasCompilador();
+        fallos += verificarLinterSemantico();
 
         List<Caso> casos = new ArrayList<>();
         casos.add(new Caso("si_entonces", "si llueve entonces llevo paraguas", true, "(p " + IMP + " q)"));
@@ -309,6 +311,63 @@ public final class PrismRegressionHarness {
             fallos++;
             System.err.println("FALLO [dos_pasadas_interprete]: " + e.getMessage());
         }
+        return fallos;
+    }
+
+    private static int verificarLinterSemantico() {
+        int fallos = 0;
+        PrismService service = new PrismService();
+
+        // 1. Caso de divergencia sinonímica ("apaga" en atom vs "suspende" en NL)
+        String texto = "Si el procesador se suspende entonces la tarea se reintenta; pero no es verdad que él se suspenda o ella se reintente.";
+        prism.pr.PrAtomRegistry regDivergente = new prism.pr.PrAtomRegistry(Map.of(
+                "p", "el procesador se apaga",
+                "q", "la tarea se reintenta"
+        ));
+        PrismResult resDiv = service.traducir(texto, regDivergente.toRegistroProposiciones(service.getBaseConocimiento()));
+        List<String> avisosDiv = prism.pr.PrSemanticLinter.diagnosticar("premisa", resDiv, regDivergente);
+        if (avisosDiv.size() != 1) {
+            fallos++;
+            System.err.println("FALLO [linter_divergencia_tam]: se esperaba 1 aviso, obtuvo " + avisosDiv.size());
+        } else {
+            String aviso = avisosDiv.get(0);
+            if (!aviso.contains("atom p = \"procesador se suspende\"") || !aviso.contains("símbolo 'v'")) {
+                fallos++;
+                System.err.println("FALLO [linter_divergencia_sugerencia]: sugerencia no contiene el reemplazo esperado: " + aviso);
+            }
+        }
+
+        // 2. Caso canónico coincidente: 0 avisos
+        prism.pr.PrAtomRegistry regCoincidente = new prism.pr.PrAtomRegistry(Map.of(
+                "p", "el procesador se suspende",
+                "q", "la tarea se reintenta"
+        ));
+        PrismResult resCoin = service.traducir(texto, regCoincidente.toRegistroProposiciones(service.getBaseConocimiento()));
+        List<String> avisosCoin = prism.pr.PrSemanticLinter.diagnosticar("premisa", resCoin, regCoincidente);
+        if (!avisosCoin.isEmpty()) {
+            fallos++;
+            System.err.println("FALLO [linter_coincidente]: se esperaban 0 avisos, obtuvo " + avisosCoin.size());
+        }
+
+        // 3. Caso programa completo AST vía diagnosticarPrograma
+        String codigoPr = "module test_linter\n"
+                + "use core\n"
+                + "atom p = \"el procesador se apaga\"\n"
+                + "atom q = \"la tarea se reintenta\"\n"
+                + "nl premisa = \"Si el procesador se suspende entonces la tarea se reintenta.\"\n"
+                + "let f = translate(premisa)\n";
+        try {
+            prism.pr.ast.PrProgram program = prism.pr.PrParser.parse(codigoPr);
+            List<String> avisosProg = prism.pr.PrSemanticLinter.diagnosticarPrograma(program, service);
+            if (avisosProg.isEmpty() || !avisosProg.get(0).contains("procesador se suspende")) {
+                fallos++;
+                System.err.println("FALLO [linter_programa_ast]: se esperaba sugerencia en programa AST, obtuvo: " + avisosProg);
+            }
+        } catch (Exception e) {
+            fallos++;
+            System.err.println("FALLO [linter_programa_ast_exc]: " + e.getMessage());
+        }
+
         return fallos;
     }
 
