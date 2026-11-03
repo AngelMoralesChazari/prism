@@ -102,7 +102,7 @@ public final class PrValidator {
 
     public static void validarArchivoConvencion(String ruta, String moduleName, List<String> errores) {
         String nombreArchivo = java.nio.file.Path.of(ruta).getFileName().toString();
-        if (!nombreArchivo.endsWith(".pr")) {
+        if (!nombreArchivo.endsWith(".pr") || nombreArchivo.startsWith("prism_check_") || nombreArchivo.startsWith("prism_lint_")) {
             return;
         }
         String esperado = nombreArchivo.substring(0, nombreArchivo.length() - 3);

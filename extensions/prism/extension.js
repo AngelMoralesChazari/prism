@@ -43,19 +43,22 @@ function activate(context) {
             return;
         }
 
-        // Crear archivo temporal para verificar el texto actual del editor (incluso sin guardar)
-        const tempFile = path.join(os.tmpdir(), `prism_check_${process.pid}_${Date.now()}.pr`);
+        // Crear carpeta y archivo temporal preservando el nombre real del archivo (p. ej. test.pr)
+        const realBasename = path.basename(document.fileName || 'document.pr');
+        const tempDir = path.join(os.tmpdir(), `prism_check_${process.pid}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`);
+        const tempFile = path.join(tempDir, realBasename);
         try {
+            fs.mkdirSync(tempDir, { recursive: true });
             fs.writeFileSync(tempFile, text, 'utf-8');
         } catch (e) {
             return;
         }
 
         execFile('java', ['-jar', jarPath, 'check', '--json', tempFile], (error, stdout, stderr) => {
-            // Eliminar archivo temporal
+            // Eliminar archivo temporal y su directorio
             try {
-                if (fs.existsSync(tempFile)) {
-                    fs.unlinkSync(tempFile);
+                if (fs.existsSync(tempDir)) {
+                    fs.rmSync(tempDir, { recursive: true, force: true });
                 }
             } catch (_) {}
 
