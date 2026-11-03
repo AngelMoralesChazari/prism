@@ -28,11 +28,13 @@ public final class PrLexer {
     private final String input;
     private int pos;
     private int line;
+    private int lineStartPos;
 
     public PrLexer(String input) {
         this.input = input == null ? "" : input;
         this.pos = 0;
         this.line = 1;
+        this.lineStartPos = 0;
     }
 
     public List<PrToken> tokenize() {
@@ -50,31 +52,32 @@ public final class PrLexer {
     private PrToken nextToken() {
         skipWhitespaceAndComments();
         int startLine = line;
+        int col = pos - lineStartPos + 1;
         if (pos >= input.length()) {
-            return new PrToken(PrTokenType.EOF, "", startLine);
+            return new PrToken(PrTokenType.EOF, "", startLine, col);
         }
         char c = input.charAt(pos);
         return switch (c) {
-            case '=' -> single(PrTokenType.EQ, startLine);
-            case ':' -> single(PrTokenType.COLON, startLine);
-            case ',' -> single(PrTokenType.COMMA, startLine);
-            case '(' -> single(PrTokenType.LPAREN, startLine);
-            case ')' -> single(PrTokenType.RPAREN, startLine);
-            case '{' -> single(PrTokenType.LBRACE, startLine);
-            case '}' -> single(PrTokenType.RBRACE, startLine);
-            case '"' -> readString(startLine);
+            case '=' -> single(PrTokenType.EQ, startLine, col);
+            case ':' -> single(PrTokenType.COLON, startLine, col);
+            case ',' -> single(PrTokenType.COMMA, startLine, col);
+            case '(' -> single(PrTokenType.LPAREN, startLine, col);
+            case ')' -> single(PrTokenType.RPAREN, startLine, col);
+            case '{' -> single(PrTokenType.LBRACE, startLine, col);
+            case '}' -> single(PrTokenType.RBRACE, startLine, col);
+            case '"' -> readString(startLine, col);
             default -> {
                 if (Character.isLetter(c) || c == '_') {
-                    yield readIdentOrKeyword(startLine);
+                    yield readIdentOrKeyword(startLine, col);
                 }
-                throw new PrParseException("Carácter no reconocido '" + c + "' en línea " + startLine);
+                throw new PrParseException("Carácter no reconocido '" + c + "' en línea " + startLine + ":" + col, startLine, col);
             }
         };
     }
 
-    private PrToken single(PrTokenType type, int startLine) {
+    private PrToken single(PrTokenType type, int startLine, int col) {
         String lex = String.valueOf(input.charAt(pos++));
-        return new PrToken(type, lex, startLine);
+        return new PrToken(type, lex, startLine, col);
     }
 
     private void skipWhitespaceAndComments() {
@@ -93,19 +96,20 @@ public final class PrLexer {
             if (c == '\n') {
                 line++;
                 pos++;
+                lineStartPos = pos;
                 continue;
             }
             break;
         }
     }
 
-    private PrToken readString(int startLine) {
+    private PrToken readString(int startLine, int col) {
         pos++;
         StringBuilder sb = new StringBuilder();
         while (pos < input.length()) {
             char c = input.charAt(pos++);
             if (c == '"') {
-                return new PrToken(PrTokenType.STRING, sb.toString(), startLine);
+                return new PrToken(PrTokenType.STRING, sb.toString(), startLine, col);
             }
             if (c == '\\' && pos < input.length()) {
                 char esc = input.charAt(pos++);
@@ -120,10 +124,10 @@ public final class PrLexer {
                 sb.append(c);
             }
         }
-        throw new PrParseException("Cadena sin cerrar en línea " + startLine);
+        throw new PrParseException("Cadena sin cerrar en línea " + startLine + ":" + col, startLine, col);
     }
 
-    private PrToken readIdentOrKeyword(int startLine) {
+    private PrToken readIdentOrKeyword(int startLine, int col) {
         int start = pos;
         pos++;
         while (pos < input.length()) {
@@ -136,6 +140,6 @@ public final class PrLexer {
         }
         String text = input.substring(start, pos);
         PrTokenType type = KEYWORDS.getOrDefault(text, PrTokenType.IDENT);
-        return new PrToken(type, text, startLine);
+        return new PrToken(type, text, startLine, col);
     }
 }

@@ -245,8 +245,44 @@ public final class PrParser {
         throw error("se esperaba cadena (" + contexto + ")");
     }
 
+    private static final List<String> PALABRAS_CLAVE = List.of(
+            "module", "use", "atom", "formula", "nl", "let", "translate", "vertauto",
+            "not", "and", "or", "impl", "iff", "steps", "table", "verdict"
+    );
+
+    public static String sugerirPalabraClave(String entrada) {
+        if (entrada == null || entrada.length() < 2) return null;
+        String w = entrada.toLowerCase();
+        String mejor = null;
+        int minD = Integer.MAX_VALUE;
+        for (String kw : PALABRAS_CLAVE) {
+            int d = distanciaLevenshtein(w, kw);
+            if (d < minD && (d <= 2 || (w.startsWith(kw) && d <= 3))) {
+                minD = d;
+                mejor = kw;
+            }
+        }
+        return mejor;
+    }
+
+    private static int distanciaLevenshtein(String a, String b) {
+        int[][] dp = new int[a.length() + 1][b.length() + 1];
+        for (int i = 0; i <= a.length(); i++) dp[i][0] = i;
+        for (int j = 0; j <= b.length(); j++) dp[0][j] = j;
+        for (int i = 1; i <= a.length(); i++) {
+            for (int j = 1; j <= b.length(); j++) {
+                int cost = a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1;
+                dp[i][j] = Math.min(Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1), dp[i - 1][j - 1] + cost);
+            }
+        }
+        return dp[a.length()][b.length()];
+    }
+
     private PrParseException error(String message) {
         PrToken token = peek();
-        return new PrParseException("Error de sintaxis en línea " + token.line() + ": " + message);
+        String sugerencia = sugerirPalabraClave(token.lexeme());
+        String extra = sugerencia != null ? ". ¿Quisiste decir '" + sugerencia + "'?" : "";
+        int len = token.lexeme() != null && !token.lexeme().isEmpty() ? token.lexeme().length() : 1;
+        return new PrParseException("Error de sintaxis en línea " + token.line() + ":" + token.col() + ": " + message + extra, token.line(), token.col(), len, sugerencia);
     }
 }
