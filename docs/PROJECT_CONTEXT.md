@@ -176,8 +176,8 @@ Al añadir capacidades del lenguaje o snippets, actualizar este contexto y el do
 
 | Visión | Estado |
 |--------|--------|
-| Lenguaje `.pr` usable | ✅ Intérprete + check |
-| Compilación a JVM | ❌ Pendiente |
-| Lexicón declarativo `.pr` | ✅ `core.pr` + cargador |
-| Extensión de editor | ✅ Básica (highlight + snippets) |
-| Tooling Maven | ✅ Operativo (`pom.xml`) |
+| Lenguaje `.pr` usable | Operativo (Intérprete + check) |
+| Compilación a JVM | Pendiente |
+| Lexicón declarativo `.pr` | Operativo (`core.pr` + cargador) |
+| Extensión de editor | Operativo (highlight + snippets) |
+| Tooling Maven | Operativo (`pom.xml`) |

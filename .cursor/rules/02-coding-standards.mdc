@@ -37,7 +37,7 @@ Keywords del lenguaje `.pr` son fijas en inglés corto: `module`, `use`, `atom`,
 ## Manejo de errores
 
 ```java
-// ✅ Preferido en CLI
+// Preferido en CLI
 } catch (PrParseException | PrRuntimeException | PrValidationException e) {
     System.err.println(e.getMessage());
     System.exit(1);

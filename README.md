@@ -8,7 +8,7 @@ Lenguaje de programación **declarativo** y motor simbólico para formalizar un 
 
 ---
 
-## ⚡ El lenguaje puro (`.pr`) en acción
+## El lenguaje puro (`.pr`) en acción
 
 Escribe tu lógica en un archivo con extensión `.pr` (por ejemplo, `ejercicio.pr`):
 
@@ -74,7 +74,7 @@ Clasificación: contingency
 
 ---
 
-## 🚀 Inicio rápido (Lenguaje Puro)
+## Inicio rápido (Lenguaje Puro)
 
 Si eres estudiante o docente y **solo quieres usar el lenguaje** sin programar en Java:
 
@@ -102,7 +102,7 @@ Para tener **coloreado de sintaxis**, **snippets** y autocompletado:
 
 ---
 
-## ☕ Uso como Librería en Java (Para Desarrolladores)
+## Uso como Librería en Java (Para Desarrolladores)
 
 Si eres desarrollador y deseas integrar el motor de Prism en tus propias aplicaciones, tutores inteligentes o evaluadores:
 
@@ -184,7 +184,7 @@ public class EvaluadorScript {
 
 ---
 
-## 🛠️ Compilación desde el código fuente
+## Compilación desde el código fuente
 
 Si deseas contribuir o modificar el motor:
 
@@ -198,6 +198,6 @@ mvn clean package
 
 ---
 
-## 📄 Licencia
+## Licencia
 
 Este proyecto está bajo la Licencia **Apache 2.0**. Consulta el archivo `LICENSE` para más detalles.

@@ -1,4 +1,4 @@
-# 📚 Prism — Centro de Documentación
+# Prism — Centro de Documentación
 
 Bienvenido al centro de documentación del lenguaje de programación y motor deductivo **Prism**.
 
@@ -6,7 +6,7 @@ La documentación se encuentra organizada en dos grandes vertientes complementar
 
 ---
 
-## 🗂️ Organización de Carpetas
+## Organización de Carpetas
 
 ```
 docs/
@@ -42,7 +42,7 @@ docs/
   * Catálogo de snippets de autocompletado en VS Code (`prnl`, `prform`, `prinl`, `prnlit`, `prog`).
   * Comandos de consola (`prc run`, `prc check`).
 
-👉 **[Ir a Documentación del Lenguaje](./1-documentacion-lenguaje/README.md)**
+* [Ir a Documentación del Lenguaje](./1-documentacion-lenguaje/README.md)
 
 ---
 
@@ -54,5 +54,5 @@ docs/
   * **Diseño del compilador:** AST, IR, motor de evaluación de tablas de verdad ($2^n$).
   * **Validación experimental:** Suite de 58 pruebas de regresión automatizadas.
 
-👉 **[Ir a Documentación de Creación y Artículo](./2-documentacion-creacion/README.md)**
+* [Ir a Documentación de Creación y Artículo](./2-documentacion-creacion/README.md)
 
