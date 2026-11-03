@@ -2,7 +2,7 @@ package prism.pr;
 
 public final class PrcCli {
 
-    private static final String VERSION = "0.2.0";
+    private static final String VERSION = "1.0.0";
 
     private PrcCli() {
     }
@@ -24,6 +24,33 @@ public final class PrcCli {
                 System.err.println(e.getMessage());
                 System.exit(1);
             }
+        } else if ("compile".equals(comando)) {
+            if (args.length < 2) {
+                System.err.println("Uso: prc compile [-d <directorio_salida>] [--keep-java] <archivo.pr>");
+                System.exit(1);
+            }
+            String ruta = null;
+            String outDir = null;
+            boolean keepJava = false;
+            for (int i = 1; i < args.length; i++) {
+                if ("--keep-java".equals(args[i])) {
+                    keepJava = true;
+                } else if ("-d".equals(args[i]) && i + 1 < args.length) {
+                    outDir = args[++i];
+                } else {
+                    ruta = args[i];
+                }
+            }
+            if (ruta == null) {
+                System.err.println("Uso: prc compile [-d <directorio_salida>] [--keep-java] <archivo.pr>");
+                System.exit(1);
+            }
+            PrCompiler.CompileResult res = PrCompiler.compile(ruta, outDir, keepJava);
+            if (!res.exito()) {
+                System.err.println(res.mensaje());
+                System.exit(1);
+            }
+            System.out.println(res.mensaje());
         } else if ("check".equals(comando)) {
             if (args.length < 2) {
                 System.err.println("Uso: prc check [--json] <archivo.pr>");
@@ -76,12 +103,13 @@ public final class PrcCli {
     }
 
     private static void imprimirAyuda() {
-        System.out.println("Prism compiler / intérprete (prc) " + VERSION);
+        System.out.println("Prism compiler & runtime (prc) " + VERSION);
         System.out.println();
         System.out.println("Uso:");
-        System.out.println("  prc run <archivo.pr>    Ejecuta un programa .pr");
-        System.out.println("  prc check <archivo.pr>  Valida sintaxis y referencias (sin ejecutar)");
-        System.out.println("  prc --version           Muestra la versión");
-        System.out.println("  prc help                Muestra esta ayuda");
+        System.out.println("  prc run <archivo.pr>               Ejecuta un programa .pr (modo interprete)");
+        System.out.println("  prc compile <archivo.pr> [-d out]  Compila un programa .pr a bytecode JVM (.class)");
+        System.out.println("  prc check <archivo.pr> [--json]    Valida sintaxis y referencias");
+        System.out.println("  prc --version                      Muestra la versión oficial");
+        System.out.println("  prc help                           Muestra esta ayuda");
     }
 }

@@ -48,6 +48,11 @@ public final class PrInterpreter {
         this.imprimirAvisos = imprimirAvisos;
     }
 
+    public static void ejecutarCompilado(String moduleName, String sourceCode) {
+        PrProgram program = PrParser.parse(sourceCode);
+        new PrInterpreter().ejecutar(program);
+    }
+
     public void ejecutar(PrProgram program) {
         PrValidator.validarOError(program);
         Map<String, String> nlTextos = new HashMap<>();
