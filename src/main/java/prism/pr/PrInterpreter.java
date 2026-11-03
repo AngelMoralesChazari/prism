@@ -44,15 +44,22 @@ public final class PrInterpreter {
         Map<String, String> atomEtiquetas = new LinkedHashMap<>();
         Map<String, FormulaBinding> formulas = new HashMap<>();
 
+        // Pase 1: Recolectar todos los textos NL y átomos declarados en el módulo (Two-Pass)
         for (PrStmt stmt : program.statements()) {
-            PrAtomRegistry atomRegistry = new PrAtomRegistry(atomEtiquetas);
             if (stmt instanceof AtomDecl) {
                 AtomDecl a = (AtomDecl) stmt;
                 atomEtiquetas.put(a.name(), a.label());
             } else if (stmt instanceof NlDecl) {
                 NlDecl n = (NlDecl) stmt;
                 nlTextos.put(n.name(), n.text());
-            } else if (stmt instanceof LetDecl) {
+            }
+        }
+
+        PrAtomRegistry atomRegistry = new PrAtomRegistry(atomEtiquetas);
+
+        // Pase 2: Evaluar traducciones, fórmulas y sentencias vertauto
+        for (PrStmt stmt : program.statements()) {
+            if (stmt instanceof LetDecl) {
                 LetDecl l = (LetDecl) stmt;
                 formulas.put(l.name(), evaluarTranslate(l.translate(), nlTextos, atomRegistry));
             } else if (stmt instanceof FormulaDecl) {
@@ -61,7 +68,7 @@ public final class PrInterpreter {
             } else if (stmt instanceof VertautoStmt) {
                 VertautoStmt v = (VertautoStmt) stmt;
                 ejecutarVertauto(v, formulas, atomRegistry);
-            } else {
+            } else if (!(stmt instanceof AtomDecl) && !(stmt instanceof NlDecl)) {
                 throw new IllegalStateException("Sentencia no contemplada: " + stmt.getClass());
             }
         }

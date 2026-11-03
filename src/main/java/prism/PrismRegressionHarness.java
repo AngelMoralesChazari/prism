@@ -39,6 +39,7 @@ public final class PrismRegressionHarness {
         int fallos = 0;
         fallos += verificarDiagnosticoCargaLgs();
         fallos += verificarLexruleCarga();
+        fallos += verificarDosPasadasCompilador();
 
         List<Caso> casos = new ArrayList<>();
         casos.add(new Caso("si_entonces", "si llueve entonces llevo paraguas", true, "(p " + IMP + " q)"));
@@ -282,6 +283,31 @@ public final class PrismRegressionHarness {
         } catch (IOException e) {
             fallos++;
             System.err.println("FALLO [lexrule_carga]: " + e.getMessage());
+        }
+        return fallos;
+    }
+
+    private static int verificarDosPasadasCompilador() {
+        int fallos = 0;
+        String codigo = "module test_dos_pasadas\n"
+                + "use core\n"
+                + "nl premisa = \"Si la tarea se reintenta entonces el procesador se suspende.\"\n"
+                + "let f1 = translate(premisa)\n"
+                + "formula f2 = q impl p\n"
+                + "atom p = \"el procesador se suspende\"\n"
+                + "atom q = \"la tarea se reintenta\"\n";
+        try {
+            prism.pr.ast.PrProgram program = prism.pr.PrParser.parse(codigo);
+            List<String> errores = prism.pr.PrValidator.validar(program);
+            if (!errores.isEmpty()) {
+                fallos++;
+                System.err.println("FALLO [dos_pasadas_validador]: " + errores);
+            }
+            prism.pr.PrInterpreter interprete = new prism.pr.PrInterpreter();
+            interprete.ejecutar(program);
+        } catch (Exception e) {
+            fallos++;
+            System.err.println("FALLO [dos_pasadas_interprete]: " + e.getMessage());
         }
         return fallos;
     }

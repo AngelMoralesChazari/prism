@@ -38,6 +38,7 @@ public final class PrValidator {
         Set<String> textosNl = new HashSet<>();
         Set<String> formulas = new HashSet<>();
 
+        // Pase 1: Registrar identificadores y recolectar catálogo de átomos, textos y fórmulas
         for (PrStmt stmt : program.statements()) {
             if (stmt instanceof AtomDecl) {
                 AtomDecl a = (AtomDecl) stmt;
@@ -50,17 +51,26 @@ public final class PrValidator {
             } else if (stmt instanceof LetDecl) {
                 LetDecl l = (LetDecl) stmt;
                 registrarIdentificador(l.name(), "let", identificadores, errores);
-                validarTranslate(l.translate(), textosNl, errores);
                 formulas.add(l.name());
             } else if (stmt instanceof FormulaDecl) {
                 FormulaDecl f = (FormulaDecl) stmt;
                 registrarIdentificador(f.name(), "formula", identificadores, errores);
-                validarAtomosEnFormula(f.name(), f.expression(), atomos, errores);
                 formulas.add(f.name());
+            }
+        }
+
+        // Pase 2: Validar expresiones lógicas y referencias con el catálogo completo disponible
+        for (PrStmt stmt : program.statements()) {
+            if (stmt instanceof LetDecl) {
+                LetDecl l = (LetDecl) stmt;
+                validarTranslate(l.translate(), textosNl, errores);
+            } else if (stmt instanceof FormulaDecl) {
+                FormulaDecl f = (FormulaDecl) stmt;
+                validarAtomosEnFormula(f.name(), f.expression(), atomos, errores);
             } else if (stmt instanceof VertautoStmt) {
                 VertautoStmt v = (VertautoStmt) stmt;
                 validarVertauto(v.target(), formulas, atomos, errores);
-            } else {
+            } else if (!(stmt instanceof AtomDecl) && !(stmt instanceof NlDecl)) {
                 errores.add("Sentencia no contemplada: " + stmt.getClass().getSimpleName());
             }
         }
