@@ -11,7 +11,7 @@ atom q = "la tarea se reintenta"
 
 # 3. Traducción y formalización lógica
 let equivalencia = translate(premisa)
-
+/*  */
 # 4. Construcción de tabla de verdad y dictamen
 vertauto equivalencia {
     steps

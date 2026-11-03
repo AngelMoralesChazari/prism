@@ -1,0 +1,46 @@
+===========================================================
+               PRISM v1.0.0 - GUIA DE INSTALACION
+===========================================================
+
+REQUISITO PREVIO:
+Tener instalado Java (OpenJDK 17 o superior).
+Si no lo tienes, descargalo gratis desde: https://adoptium.net
+
+-----------------------------------------------------------
+PASO 1: INSTALAR EL LENGUAJE Y COMPILADOR (prc)
+-----------------------------------------------------------
+1. Haz doble clic en el archivo:
+   install.bat
+
+2. Espera a que termine (toma 2 segundos).
+3. Abre una nueva ventana de PowerShell o CMD y escribe:
+   prc --version
+
+Listo! Ya tienes el compilador disponible en todo tu sistema.
+
+-----------------------------------------------------------
+PASO 2: INSTALAR LA EXTENSION EN VS CODE (SIN COMANDOS)
+-----------------------------------------------------------
+1. Abre Visual Studio Code.
+2. Abre la pestana de Extensiones (icono de cuadrados en la
+   barra izquierda o atajo Ctrl + Shift + X).
+3. En la parte superior del panel de Extensiones, haz clic en
+   el icono de los tres puntos (...) situado a la derecha.
+4. Selecciona "Install from VSIX..." (Instalar desde VSIX...).
+5. Selecciona el archivo 'prism-0.3.2.vsix' incluido en esta carpeta.
+
+Listo! Tus archivos .pr tendran coloreado de sintaxis,
+diagnosticos en tiempo real y sugerencias Quick Fix.
+
+-----------------------------------------------------------
+COMANDOS RAPIDOS PARA PROBAR EN TU TERMINAL:
+-----------------------------------------------------------
+- Ejecutar un archivo:
+  prc run examples\prueba_nl.pr
+
+- Compilar a un archivo .class ejecutable:
+  prc compile examples\prueba_nl.pr -d out\
+
+- Ejecutar el programa compilado:
+  java -cp "out;%USERPROFILE%\.prism\lib\prism.jar" prueba_nl
+
