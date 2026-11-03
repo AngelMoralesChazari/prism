@@ -83,12 +83,68 @@ public final class PrLexer {
     private void skipWhitespaceAndComments() {
         while (pos < input.length()) {
             char c = input.charAt(pos);
+
+            // 1. Comentario de bloque /* ... */
+            if (c == '/' && pos + 1 < input.length() && input.charAt(pos + 1) == '*') {
+                int startLine = line;
+                int col = pos - lineStartPos + 1;
+                pos += 2;
+                boolean cerrado = false;
+                while (pos < input.length()) {
+                    if (input.charAt(pos) == '*' && pos + 1 < input.length() && input.charAt(pos + 1) == '/') {
+                        pos += 2;
+                        cerrado = true;
+                        break;
+                    }
+                    if (input.charAt(pos) == '\n') {
+                        line++;
+                        pos++;
+                        lineStartPos = pos;
+                        continue;
+                    }
+                    pos++;
+                }
+                if (!cerrado) {
+                    throw new PrParseException("Comentario multilínea '/*' sin cerrar en línea " + startLine + ":" + col, startLine, col);
+                }
+                continue;
+            }
+
+            // 2. Comentario de bloque ### ... ###
+            if (c == '#' && pos + 2 < input.length() && input.charAt(pos + 1) == '#' && input.charAt(pos + 2) == '#') {
+                int startLine = line;
+                int col = pos - lineStartPos + 1;
+                pos += 3;
+                boolean cerrado = false;
+                while (pos < input.length()) {
+                    if (input.charAt(pos) == '#' && pos + 2 < input.length() && input.charAt(pos + 1) == '#' && input.charAt(pos + 2) == '#') {
+                        pos += 3;
+                        cerrado = true;
+                        break;
+                    }
+                    if (input.charAt(pos) == '\n') {
+                        line++;
+                        pos++;
+                        lineStartPos = pos;
+                        continue;
+                    }
+                    pos++;
+                }
+                if (!cerrado) {
+                    throw new PrParseException("Comentario multilínea '###' sin cerrar en línea " + startLine + ":" + col, startLine, col);
+                }
+                continue;
+            }
+
+            // 3. Comentario de línea # ...
             if (c == '#') {
                 while (pos < input.length() && input.charAt(pos) != '\n') {
                     pos++;
                 }
                 continue;
             }
+
+            // 4. Espacios en blanco y saltos de línea
             if (c == ' ' || c == '\t' || c == '\r') {
                 pos++;
                 continue;
@@ -104,12 +160,51 @@ public final class PrLexer {
     }
 
     private PrToken readString(int startLine, int col) {
+        // Bloque con triple comilla: """ ... """
+        if (pos + 2 < input.length() && input.charAt(pos + 1) == '"' && input.charAt(pos + 2) == '"') {
+            pos += 3;
+            StringBuilder sb = new StringBuilder();
+            while (pos < input.length()) {
+                if (input.charAt(pos) == '"' && pos + 2 < input.length() && input.charAt(pos + 1) == '"' && input.charAt(pos + 2) == '"') {
+                    pos += 3;
+                    return new PrToken(PrTokenType.STRING, limpiarCadenaMultilinea(sb.toString()), startLine, col);
+                }
+                char c = input.charAt(pos++);
+                if (c == '\n') {
+                    line++;
+                    lineStartPos = pos;
+                    sb.append('\n');
+                    continue;
+                }
+                if (c == '\\' && pos < input.length()) {
+                    char esc = input.charAt(pos++);
+                    sb.append(switch (esc) {
+                        case 'n' -> '\n';
+                        case 't' -> '\t';
+                        case '"' -> '"';
+                        case '\\' -> '\\';
+                        default -> esc;
+                    });
+                } else {
+                    sb.append(c);
+                }
+            }
+            throw new PrParseException("Cadena multilínea '\"\"\"' sin cerrar en línea " + startLine + ":" + col, startLine, col);
+        }
+
+        // Cadena estándar con comillas simples: " ... " (permite saltos de línea con ENTER)
         pos++;
         StringBuilder sb = new StringBuilder();
         while (pos < input.length()) {
             char c = input.charAt(pos++);
             if (c == '"') {
-                return new PrToken(PrTokenType.STRING, sb.toString(), startLine, col);
+                return new PrToken(PrTokenType.STRING, limpiarCadenaMultilinea(sb.toString()), startLine, col);
+            }
+            if (c == '\n') {
+                line++;
+                lineStartPos = pos;
+                sb.append('\n');
+                continue;
             }
             if (c == '\\' && pos < input.length()) {
                 char esc = input.charAt(pos++);
@@ -125,6 +220,13 @@ public final class PrLexer {
             }
         }
         throw new PrParseException("Cadena sin cerrar en línea " + startLine + ":" + col, startLine, col);
+    }
+
+    private String limpiarCadenaMultilinea(String raw) {
+        if (!raw.contains("\n") && !raw.contains("\r")) {
+            return raw;
+        }
+        return raw.replaceAll("[\\r\\n]+[\\t ]*", " ").trim();
     }
 
     private PrToken readIdentOrKeyword(int startLine, int col) {
