@@ -19,6 +19,7 @@ import prism.vertauto.VertautoResult;
 import prism.vertauto.VertautoService;
 import prism.vertauto.EvaluadorProposicional;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,6 +29,7 @@ public final class PrInterpreter {
 
     private final PrismService translateService;
     private final VertautoService vertautoService;
+    private boolean imprimirAvisos = true;
 
     public PrInterpreter() {
         this(new PrismService(), new VertautoService());
@@ -36,6 +38,14 @@ public final class PrInterpreter {
     public PrInterpreter(PrismService translateService, VertautoService vertautoService) {
         this.translateService = translateService;
         this.vertautoService = vertautoService;
+    }
+
+    public boolean isImprimirAvisos() {
+        return imprimirAvisos;
+    }
+
+    public void setImprimirAvisos(boolean imprimirAvisos) {
+        this.imprimirAvisos = imprimirAvisos;
     }
 
     public void ejecutar(PrProgram program) {
@@ -102,7 +112,12 @@ public final class PrInterpreter {
         if (!traduccion.isExito()) {
             throw new PrRuntimeException("translate falló: " + traduccion.getMensaje());
         }
-        return FormulaBinding.desdeTraduccion(traduccion, texto, atomRegistry);
+        String contexto = call.text().isLiteral() ? "\"" + call.text().literal() + "\"" : call.text().variableName();
+        List<String> avisos = PrSemanticLinter.diagnosticar(contexto, traduccion, atomRegistry);
+        if (imprimirAvisos) {
+            PrSemanticLinter.imprimirAvisos(avisos);
+        }
+        return FormulaBinding.desdeTraduccion(traduccion, texto, atomRegistry, avisos);
     }
 
     private FormulaBinding evaluarFormula(FormulaExpr expr, PrAtomRegistry atomRegistry) {
@@ -159,6 +174,7 @@ public final class PrInterpreter {
         private final PrismResult traduccion;
         private final String textoNatural;
         private final PrAtomRegistry atomRegistry;
+        private final List<String> avisosSemanticos;
 
         private FormulaBinding(
                 String formulaClasica,
@@ -166,7 +182,8 @@ public final class PrInterpreter {
                 String formulaMostrada,
                 PrismResult traduccion,
                 String textoNatural,
-                PrAtomRegistry atomRegistry
+                PrAtomRegistry atomRegistry,
+                List<String> avisosSemanticos
         ) {
             this.formulaClasica = formulaClasica;
             this.expr = expr;
@@ -174,6 +191,7 @@ public final class PrInterpreter {
             this.traduccion = traduccion;
             this.textoNatural = textoNatural;
             this.atomRegistry = atomRegistry == null ? PrAtomRegistry.vacio() : atomRegistry;
+            this.avisosSemanticos = avisosSemanticos == null ? List.of() : List.copyOf(avisosSemanticos);
         }
 
         static FormulaBinding desdeTraduccion(
@@ -181,13 +199,23 @@ public final class PrInterpreter {
                 String textoNatural,
                 PrAtomRegistry atomRegistry
         ) {
+            return desdeTraduccion(traduccion, textoNatural, atomRegistry, List.of());
+        }
+
+        static FormulaBinding desdeTraduccion(
+                PrismResult traduccion,
+                String textoNatural,
+                PrAtomRegistry atomRegistry,
+                List<String> avisosSemanticos
+        ) {
             return new FormulaBinding(
                     traduccion.getFormula(),
                     null,
                     traduccion.getFormula(),
                     traduccion,
                     textoNatural,
-                    atomRegistry
+                    atomRegistry,
+                    avisosSemanticos
             );
         }
 
@@ -196,7 +224,11 @@ public final class PrInterpreter {
                 String mostrada,
                 PrAtomRegistry atomRegistry
         ) {
-            return new FormulaBinding(null, expr, mostrada, null, null, atomRegistry);
+            return new FormulaBinding(null, expr, mostrada, null, null, atomRegistry, List.of());
+        }
+
+        public List<String> avisosSemanticos() {
+            return avisosSemanticos;
         }
 
         VertautoResult evaluar(VertautoService vertautoService) {
@@ -205,6 +237,10 @@ public final class PrInterpreter {
                 Map<String, String> proposiciones = atomRegistry.proposicionesDesdeTraduccion(
                         traduccion.getProposiciones()
                 );
+                List<String> pasos = new ArrayList<>(traduccion.getPasosDeAnalisis());
+                if (!avisosSemanticos.isEmpty()) {
+                    pasos.addAll(avisosSemanticos);
+                }
                 return new VertautoResult(
                         evaluacion.getFormula(),
                         evaluacion.getDictamen(),
@@ -212,7 +248,7 @@ public final class PrInterpreter {
                         evaluacion.getFilasTabla(),
                         evaluacion.getPasosEvaluacion(),
                         textoNatural,
-                        traduccion.getPasosDeAnalisis(),
+                        Collections.unmodifiableList(pasos),
                         proposiciones
                 );
             }
