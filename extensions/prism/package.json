@@ -1,15 +1,20 @@
 {
   "name": "prism",
   "displayName": "Prism",
-  "description": "Resaltado de sintaxis y snippets para archivos Prism (.pr)",
-  "version": "0.2.0",
+  "description": "Sintaxis, autocompletado y diagnósticos visuales en tiempo real para Prism (.pr)",
+  "version": "0.3.0",
   "publisher": "prism",
   "icon": "./icons/Prismv1.png",
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:prism"
+  ],
   "engines": {
     "vscode": "^1.80.0"
   },
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Linters"
   ],
   "contributes": {
     "languages": [
