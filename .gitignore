@@ -13,7 +13,3 @@ TautoTeacher2.0/
 # Documentación local larga (no versionar en el remoto)
 documentacion Prism/
 documentacion LogicScript/
-
-# docs/ versiona solo el contexto del proyecto (documentacion de investigacion es solo local)
-docs/*
-!docs/PROJECT_CONTEXT.md
