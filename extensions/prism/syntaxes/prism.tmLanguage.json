@@ -12,6 +12,16 @@
     "comments": {
       "patterns": [
         {
+          "name": "comment.block.prism",
+          "begin": "/\\*",
+          "end": "\\*/"
+        },
+        {
+          "name": "comment.block.triple-number-sign.prism",
+          "begin": "###",
+          "end": "###"
+        },
+        {
           "name": "comment.line.number-sign.prism",
           "match": "#.*$"
         }
@@ -19,6 +29,17 @@
     },
     "strings": {
       "patterns": [
+        {
+          "name": "string.quoted.triple.prism",
+          "begin": "\"\"\"",
+          "end": "\"\"\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.prism",
+              "match": "\\\\."
+            }
+          ]
+        },
         {
           "name": "string.quoted.double.prism",
           "begin": "\"",

@@ -156,6 +156,49 @@ function activate(context) {
         })
     );
 
+    // Comando universal para alternar comentarios de bloque /* ... */ (sin conflicto con atajos de Linux)
+    context.subscriptions.push(
+        vscode.commands.registerCommand('prism.toggleBlockComment', () => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                return;
+            }
+
+            const selection = editor.selection;
+            const doc = editor.document;
+            const selectedText = doc.getText(selection);
+
+            // Si no hay texto seleccionado, insertar /*  */ y colocar el cursor en medio
+            if (!selectedText) {
+                editor.edit(editBuilder => {
+                    editBuilder.insert(selection.active, '/*  */');
+                }).then(() => {
+                    const newPos = selection.active.translate(0, 3);
+                    editor.selection = new vscode.Selection(newPos, newPos);
+                });
+                return;
+            }
+
+            const trimmed = selectedText.trim();
+            // Si ya está envuelto en /* ... */, descomentar
+            if (trimmed.startsWith('/*') && trimmed.endsWith('*/')) {
+                const unwrapped = trimmed.substring(2, trimmed.length - 2).trim();
+                editor.edit(editBuilder => {
+                    editBuilder.replace(selection, unwrapped);
+                });
+            } else {
+                // Comentar con /* ... */
+                const isMultiline = selectedText.includes('\n');
+                const commentText = isMultiline
+                    ? `/*\n  ${selectedText.split('\n').join('\n  ')}\n*/`
+                    : `/* ${selectedText} */`;
+                editor.edit(editBuilder => {
+                    editBuilder.replace(selection, commentText);
+                });
+            }
+        })
+    );
+
     // Ejecutar diagnóstico inicial sobre los documentos visibles
     if (vscode.window.activeTextEditor) {
         runDiagnostics(vscode.window.activeTextEditor.document);

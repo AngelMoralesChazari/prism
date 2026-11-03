@@ -17,6 +17,30 @@
     "Linters"
   ],
   "contributes": {
+    "commands": [
+      {
+        "command": "prism.toggleBlockComment",
+        "title": "Alternar Comentario de Bloque (/* ... */)",
+        "category": "Prism"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "prism.toggleBlockComment",
+        "key": "ctrl+shift+/",
+        "when": "editorTextFocus && editorLangId == 'prism'"
+      },
+      {
+        "command": "prism.toggleBlockComment",
+        "key": "ctrl+shift+a",
+        "when": "editorTextFocus && editorLangId == 'prism'"
+      },
+      {
+        "command": "prism.toggleBlockComment",
+        "key": "shift+alt+a",
+        "when": "editorTextFocus && editorLangId == 'prism'"
+      }
+    ],
     "languages": [
       {
         "id": "prism",
