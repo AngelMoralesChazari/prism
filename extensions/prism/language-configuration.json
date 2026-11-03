@@ -24,24 +24,9 @@
   },
   "onEnterRules": [
     {
-      "beforeText": "^\\s*nl\\s+premisa\\s*=\\s*\"[^\"]*$",
+      "beforeText": "^\\s*(?:nl|atom|let|formula)\\s+\\w+\\s*=\\s*\"[^\"]*$",
       "action": {
-        "indentAction": "none",
-        "appendText": "              "
-      }
-    },
-    {
-      "beforeText": "^\\s*nl\\s+\\w+\\s*=\\s*\"[^\"]*$",
-      "action": {
-        "indentAction": "none",
-        "appendText": "              "
-      }
-    },
-    {
-      "beforeText": "^\\s{14}[^\"]*$",
-      "action": {
-        "indentAction": "none",
-        "appendText": "              "
+        "indentAction": "indent"
       }
     },
     {

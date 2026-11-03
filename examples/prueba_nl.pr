@@ -3,7 +3,8 @@ module prueba_nl
 use core
 
 # 1. El enunciado del problema (lenguaje natural)
-nl premisa = "Si el procesador se suspende entonces la tarea se reintenta; pero no es verdad que él se suspenda o ella se reintente."
+nl premisa = "Si el procesador se suspende entonces la tarea se reintenta; 
+              pero no es verdad que él se suspenda o ella se reintente."
 
 # 2. Definición formal de proposiciones atómicas (p, q, ...)
 atom p = "el procesador se suspende"

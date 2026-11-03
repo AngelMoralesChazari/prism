@@ -118,9 +118,10 @@ function activate(context) {
 
     /**
      * Determina la indentación necesaria para líneas dentro de cadenas multilínea
-     * como 'nl premisa = "...' para alinear el texto exactamente debajo del inicio de la cadena.
+     * como 'nl premisa = "...'. Aplica 1 solo tab (sangría estándar de 4 espacios)
+     * respecto al inicio de la declaración.
      */
-    function findStringIndent(lines, targetLineIndex) {
+    function findStringIndent(lines, targetLineIndex, indentUnit = '    ') {
         let totalQuotes = 0;
         let declIndent = null;
         let foundDecl = false;
@@ -130,9 +131,10 @@ function activate(context) {
             const quotesOnLine = (line.match(/(?<!\\)"/g) || []).length;
             totalQuotes += quotesOnLine;
 
-            const m = line.match(/^(\s*(?:nl|atom|let|formula)\s+[\w.]+\s*=\s*")(.*)$/);
+            const m = line.match(/^(\s*)(?:nl|atom|let|formula)\s+[\w.]+\s*=\s*"/);
             if (m) {
-                declIndent = m[1].length;
+                const baseIndent = m[1];
+                declIndent = baseIndent + indentUnit;
                 foundDecl = true;
                 break;
             }
@@ -153,7 +155,7 @@ function activate(context) {
         vscode.workspace.onDidChangeTextDocument(async (event) => {
             scheduleCheck(event.document);
 
-            // Auto-alineación al presionar Enter dentro de premisas multilínea
+            // Auto-alineación al presionar Enter dentro de premisas multilínea (1 tab)
             if (isFormattingIndent || !event.document || (event.document.languageId !== 'prism' && !event.document.fileName.endsWith('.pr'))) {
                 return;
             }
@@ -176,13 +178,13 @@ function activate(context) {
                         lines.push(doc.lineAt(i).text);
                     }
 
-                    const indentCol = findStringIndent(lines, splitLineIndex);
-                    if (indentCol !== null && indentCol > 0) {
+                    const indentUnit = (editor && editor.options.insertSpaces === false) ? '\t' : '    ';
+                    const targetIndent = findStringIndent(lines, splitLineIndex, indentUnit);
+                    if (targetIndent !== null) {
                         const nextLine = doc.lineAt(splitLineIndex + 1);
                         const currentLeading = nextLine.text.match(/^\s*/)[0];
-                        const targetSpaces = ' '.repeat(indentCol);
 
-                        if (currentLeading !== targetSpaces) {
+                        if (currentLeading !== targetIndent) {
                             isFormattingIndent = true;
                             try {
                                 const replaceRange = new vscode.Range(
@@ -190,10 +192,10 @@ function activate(context) {
                                     splitLineIndex + 1, currentLeading.length
                                 );
                                 await editor.edit(editBuilder => {
-                                    editBuilder.replace(replaceRange, targetSpaces);
+                                    editBuilder.replace(replaceRange, targetIndent);
                                 }, { undoStopBefore: false, undoStopAfter: false });
 
-                                const newPos = new vscode.Position(splitLineIndex + 1, indentCol);
+                                const newPos = new vscode.Position(splitLineIndex + 1, targetIndent.length);
                                 editor.selection = new vscode.Selection(newPos, newPos);
                             } catch (_) {}
                             finally {
@@ -207,7 +209,7 @@ function activate(context) {
         vscode.workspace.onDidCloseTextDocument(doc => diagnosticCollection.delete(doc.uri))
     );
 
-    // Formateador de documento (Shift + Alt + F) para alinear premisas multilínea existentes
+    // Formateador de documento (Shift + Alt + F) para alinear premisas multilínea con 1 tab
     context.subscriptions.push(
         vscode.languages.registerDocumentFormattingEditProvider('prism', {
             provideDocumentFormattingEdits(document) {
@@ -221,12 +223,12 @@ function activate(context) {
                     const text = line.text;
 
                     if (!inString) {
-                        const m = text.match(/^(\s*(?:nl|atom|let|formula)\s+[\w.]+\s*=\s*")(.*)$/);
+                        const m = text.match(/^(\s*)(?:nl|atom|let|formula)\s+[\w.]+\s*=\s*"/);
                         if (m) {
                             const quotes = (text.match(/(?<!\\)"/g) || []).length;
                             if (quotes % 2 !== 0) {
                                 inString = true;
-                                indentSpaces = ' '.repeat(m[1].length);
+                                indentSpaces = m[1] + '    ';
                             }
                         }
                     } else {
