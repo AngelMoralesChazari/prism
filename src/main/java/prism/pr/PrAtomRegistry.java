@@ -72,4 +72,12 @@ public final class PrAtomRegistry {
     public String etiquetaDe(String simbolo) {
         return simboloAEtiqueta.get(simbolo);
     }
+
+    public Map<String, String> mapaSimboloAEtiqueta() {
+        return simboloAEtiqueta;
+    }
+
+    public boolean contieneSimbolo(String simbolo) {
+        return simboloAEtiqueta.containsKey(simbolo);
+    }
 }
