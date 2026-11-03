@@ -1,9 +1,14 @@
 {
-  "name": "prism",
+  "name": "prism-lang",
   "displayName": "Prism",
   "description": "Sintaxis, autocompletado y diagnósticos visuales en tiempo real para Prism (.pr)",
-  "version": "0.3.2",
-  "publisher": "prism",
+  "version": "1.0.0",
+  "publisher": "absoftwaregroup",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AngelMoralesChazari/prism"
+  },
   "icon": "./icons/Prismv1.png",
   "main": "./extension.js",
   "activationEvents": [
