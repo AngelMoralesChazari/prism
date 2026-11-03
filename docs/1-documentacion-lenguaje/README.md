@@ -1,10 +1,10 @@
-# 📖 Prism — Manual Oficial del Lenguaje y Guía de Uso
+# Prism — Manual Oficial del Lenguaje y Guía de Uso
 
 Esta carpeta contiene la **documentación oficial de uso del lenguaje Prism**, dirigida a desarrolladores, estudiantes, profesores y usuarios que deseen escribir, compilar y evaluar programas lógicos en Prism (`.pr`).
 
 ---
 
-## 🗂️ Índice de Contenidos
+## Índice de Contenidos
 
 | Archivo | Descripción | ¿Cuándo consultarlo? |
 | :--- | :--- | :--- |
@@ -16,7 +16,7 @@ Esta carpeta contiene la **documentación oficial de uso del lenguaje Prism**, d
 
 ---
 
-## 🚀 Resumen Rápido: Las 3 Formas de Evaluar en Prism
+## Resumen Rápido: Las 3 Formas de Evaluar en Prism
 
 1. **Forma 1: Lenguaje Natural Canónico (`nl` + `atom` + `translate` + `vertauto`)**
    ```prism

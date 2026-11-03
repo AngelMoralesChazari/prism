@@ -116,9 +116,9 @@ Orden canónico recomendado (método en papel):
 > [!TIP] Diagnóstico de Coherencia Semántica y Sugerencias Didácticas ("Did you mean...?")
 > Al utilizar `let f = translate(premisa)`, Prism analiza automáticamente que las etiquetas de tus declaraciones `atom` coincidan fielmente con las proposiciones identificadas en el texto natural. Si por divergencia conceptual o léxica declaras una frase no coincidente (por ejemplo, `atom p = "el procesador se apaga"` cuando el texto dice `"se suspende"`), el compilador emite un aviso formativo inmediato en consola (`prc run` y `prc check`) sugiriéndote la proposición exacta no enlazada:
 > ```text
-> ⚠️ [Aviso Semántico] El átomo declarado 'p' ("el procesador se apaga") no coincide con ninguna cláusula de 'premisa'.
->    💡 Sugerencia: Se detectó una cláusula no enlazada en el texto: "procesador se suspende" (asignada automáticamente al símbolo 'v').
->       --> ¿Quisiste decir: atom p = "procesador se suspende"?
+> [Aviso Semántico] El átomo declarado 'p' ("el procesador se apaga") no coincide con ninguna cláusula de 'premisa'.
+>    Sugerencia: Se detectó una cláusula no enlazada en el texto: "procesador se suspende" (asignada automáticamente al símbolo 'v').
+>    --> ¿Quisiste decir: atom p = "procesador se suspende"?
 > ```
 > Esto evita la trampa de los diccionarios de sinónimos abiertos, garantizando rigor formal y guiando al estudiante a modelar la proposición canónica correcta.
 

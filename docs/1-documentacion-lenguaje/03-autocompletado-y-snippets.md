@@ -143,19 +143,19 @@ java -cp out prism.pr.PrcCli check examples/mi_ejercicio.pr
 
 | Constructo | Estado | Notas |
 |------------|--------|-------|
-| `module` | ✅ | Una por archivo; nombre = archivo |
-| `use core` | ✅ | Carga `core.lgs` |
-| `atom p = "..."` | ✅ | Enlaza etiquetas en salida de `vertauto` |
-| `nl t = "..."` | ✅ | Texto NL reutilizable |
-| `let x = translate(t)` | ✅ | Desde variable `nl` |
-| `let x = translate("...")` | ✅ | Literal inline |
-| `let x = translate(t, modulo)` | ❌ | Pendiente |
-| `formula f = ...` | ✅ | `not and or impl iff` |
-| `vertauto f` | ✅ | Modo corto |
-| `vertauto f { steps table verdict }` | ✅ | Modo extendido |
-| `vertauto (p impl q)` | ✅ | Expresión inline |
-| `rule`, `run` | ❌ | Pendiente |
-| `lsc compile` → JVM | ❌ | Pendiente |
+| `module` | Disponible | Una por archivo; nombre = archivo |
+| `use core` | Disponible | Carga `core.lgs` |
+| `atom p = "..."` | Disponible | Enlaza etiquetas en salida de `vertauto` |
+| `nl t = "..."` | Disponible | Texto NL reutilizable |
+| `let x = translate(t)` | Disponible | Desde variable `nl` |
+| `let x = translate("...")` | Disponible | Literal inline |
+| `let x = translate(t, modulo)` | Pendiente | Pendiente |
+| `formula f = ...` | Disponible | `not and or impl iff` |
+| `vertauto f` | Disponible | Modo corto |
+| `vertauto f { steps table verdict }` | Disponible | Modo extendido |
+| `vertauto (p impl q)` | Disponible | Expresión inline |
+| `rule`, `run` | Pendiente | Pendiente |
+| `lsc compile` → JVM | Pendiente | Pendiente |
 
 ### Operadores en `formula`
 
