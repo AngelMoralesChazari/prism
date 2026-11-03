@@ -1,0 +1,131 @@
+# LogicScript — datos léxicos y patrones v0.6
+# Fase C: reglas morfológicas declarativas (lexrule) en lugar de solo Java embebido.
+
+version 0.6
+
+# --- Morfología declarativa (orden = prioridad; primera coincidencia gana) ---
+lexrule excluir gorra sombrero paraguas calor frio sol cielo nube nubes lluvia examen clase
+
+lexrule sufijo iaria infinitivo ar
+lexrule sufijo aria infinitivo ar
+lexrule sufijo iaba infinitivo ar
+lexrule sufijo abas infinitivo ar
+lexrule sufijo aban infinitivo ar
+lexrule sufijo amos infinitivo ar
+lexrule sufijo ais infinitivo ar
+lexrule sufijo aron infinitivo ar
+lexrule sufijo aran infinitivo ar
+lexrule sufijo are infinitivo ar
+lexrule sufijo aba infinitivo ar
+lexrule sufijo ado infinitivo ar
+lexrule sufijo ada infinitivo ar
+lexrule sufijo emos infinitivo er
+lexrule sufijo eis infinitivo er
+lexrule sufijo imos infinitivo ir
+lexrule sufijo an infinitivo ar
+lexrule sufijo as infinitivo ar
+lexrule sufijo a infinitivo ar
+lexrule sufijo o heuristica primera_persona
+
+# Lluvia
+lemma llueve -> llover
+lemma llueva -> llover
+lemma llovio -> llover
+lemma llovera -> llover
+lemma lloveria -> llover
+
+# Llevar (paraguas, etc.)
+lemma llevo -> llevar
+lemma lleva -> llevar
+lemma llevas -> llevar
+lemma llevan -> llevar
+lemma llevara -> llevar
+lemma llevaria -> llevar
+lemma llevare -> llevar
+
+# Estudiar / aprobar — irregulares en aprobar; estudiar cubierto por morfología (-ar)
+lemma apruebo -> aprobar
+lemma apruebas -> aprobar
+lemma aprueba -> aprobar
+lemma aprueban -> aprobar
+lemma apruebe -> aprobar
+lemma aprobo -> aprobar
+lemma aprobara -> aprobar
+lemma aprobare -> aprobar
+
+# Fallar — morfología -ar; sin lemma salvo si falla en pruebas
+
+# Trabajar / descansar — morfología -ar
+
+# Salir — irregular
+lemma salgo -> salir
+lemma sales -> salir
+lemma sale -> salir
+lemma salen -> salir
+lemma saldre -> salir
+lemma saldria -> salir
+
+# Clima / vestimenta (sustantivos + irregulares)
+lemma solea -> hacer_sol
+lemma hace -> hacer
+lemma gorra -> gorra
+lemma sombrero -> sombrero
+lemma paraguas -> paraguas
+lemma nieva -> nevar
+lemma niegue -> nevar
+lemma calor -> calor
+lemma frio -> frio
+
+# Practicar — morfología -ar
+
+# Dormir — duermo vía morfología (-o); 3.ª/2.ª pers. cambio vocálico (duerm-)
+lemma duerme -> dormir
+lemma duermes -> dormir
+lemma duermen -> dormir
+lemma duerma -> dormir
+lemma duermas -> dormir
+
+# Movimiento — irregulares
+lemma voy -> ir
+lemma vas -> ir
+lemma va -> ir
+lemma van -> ir
+lemma ire -> ir
+lemma puedo -> poder
+lemma puedes -> poder
+lemma puede -> poder
+lemma pueden -> poder
+lemma pueda -> poder
+lemma quiero -> querer
+lemma quieres -> querer
+lemma quiere -> querer
+lemma quieren -> querer
+lemma tengo -> tener
+lemma tienes -> tener
+lemma tiene -> tener
+lemma tienen -> tener
+
+# Patrones semánticos (orden = prioridad de coincidencia)
+pattern SI_CONJ_Y_ENTONCES si literal y literal entonces literal => imp_and left=1 mid=3 right=5
+pattern SI_ENTONCES_DISY_CONS si literal entonces literal o literal => imp_or left=1 mid=3 right=5
+pattern SI_ENTONCES_CONJ_CONS si literal entonces literal y literal => imp_and_cons left=1 mid=3 right=5
+pattern SI_DISY_O_ENTONCES si literal o literal entonces literal => imp_or_ant left=1 mid=3 right=5
+pattern SI_DISY_O_ELIPTICO si literal o literal literal => imp_or_ant left=1 mid=3 right=4
+pattern SIEMPRE_QUE_CONJ_Y_ELIPTICO siempre_que literal y literal literal => imp_and left=1 mid=3 right=4
+pattern SIEMPRE_QUE_DISY_O_ELIPTICO siempre_que literal o literal literal => imp_or_ant left=1 mid=3 right=4
+pattern CUANDO_CONJ_Y_ELIPTICO cuando literal y literal literal => imp_and left=1 mid=3 right=4
+pattern CUANDO_DISY_O_ELIPTICO cuando literal o literal literal => imp_or_ant left=1 mid=3 right=4
+pattern SI_CONJ_Y_ELIPTICO si literal y literal literal => imp_and left=1 mid=3 right=4
+pattern SI_ENTONCES si literal entonces literal => imp left=1 right=3
+pattern SI_ELIPTICO si literal literal => imp left=1 right=2
+pattern CUANDO_ENTONCES cuando literal entonces literal => imp left=1 right=3
+pattern CUANDO_ELIPTICO cuando literal literal => imp left=1 right=2
+pattern SOLO_SI literal solo_si literal => imp left=0 right=2
+pattern A_MENOS_QUE literal a_menos_que literal => imp_unless left=0 right=2
+pattern SIEMPRE_QUE_ENTONCES siempre_que literal entonces literal => imp left=1 right=3
+pattern SIEMPRE_QUE_ELIPTICO siempre_que literal literal => imp left=1 right=2
+pattern CONSECUENTE_SI_ANTECEDENTE literal si literal => imp left=2 right=0
+pattern EN_CASO_DE_QUE en_caso_de_que literal literal => imp left=1 right=2
+pattern EQUIVALENCIA literal si_y_solo_si literal => equiv left=0 right=2
+pattern CONJUNCION literal y literal => and left=0 right=2
+pattern DISYUNCION literal o literal => or left=0 right=2
