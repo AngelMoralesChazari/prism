@@ -125,6 +125,7 @@ public final class PrCompiler {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler != null) {
             List<String> args = List.of(
+                    "-encoding", "UTF-8",
                     "-cp", classpath,
                     "-d", outDir.toAbsolutePath().toString(),
                     javaFile.toAbsolutePath().toString());
@@ -136,8 +137,10 @@ public final class PrCompiler {
 
         // Fallback a llamada de proceso javac externo
         try {
+            String javacCmd = resolveJavacExecutable();
             Process process = new ProcessBuilder(
-                    "javac",
+                    javacCmd,
+                    "-encoding", "UTF-8",
                     "-cp", classpath,
                     "-d", outDir.toAbsolutePath().toString(),
                     javaFile.toAbsolutePath().toString()).redirectErrorStream(true).start();
@@ -149,13 +152,32 @@ public final class PrCompiler {
         }
     }
 
+    private static String resolveJavacExecutable() {
+        String javaHome = System.getProperty("java.home");
+        if (javaHome != null && !javaHome.isBlank()) {
+            boolean isWin = System.getProperty("os.name", "").toLowerCase().contains("win");
+            Path candidate = Path.of(javaHome, "bin", isWin ? "javac.exe" : "javac");
+            if (Files.isExecutable(candidate)) {
+                return candidate.toAbsolutePath().toString();
+            }
+        }
+        return "javac";
+    }
+
     private static String getRuntimeJarLocation() {
         try {
             var codeSource = PrCompiler.class.getProtectionDomain().getCodeSource();
             if (codeSource != null && codeSource.getLocation() != null) {
-                String path = URLDecoder.decode(codeSource.getLocation().getPath(), StandardCharsets.UTF_8);
-                if (path.endsWith(".jar")) {
-                    return path;
+                try {
+                    String path = Path.of(codeSource.getLocation().toURI()).toAbsolutePath().toString();
+                    if (path.endsWith(".jar")) {
+                        return path;
+                    }
+                } catch (Exception ignoredUri) {
+                    String path = URLDecoder.decode(codeSource.getLocation().getPath(), StandardCharsets.UTF_8);
+                    if (path.endsWith(".jar")) {
+                        return path;
+                    }
                 }
             }
         } catch (Exception ignored) {

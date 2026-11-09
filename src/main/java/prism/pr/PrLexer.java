@@ -31,7 +31,11 @@ public final class PrLexer {
     private int lineStartPos;
 
     public PrLexer(String input) {
-        this.input = input == null ? "" : input;
+        String normalized = input == null ? "" : input;
+        if (normalized.startsWith("\uFEFF")) {
+            normalized = normalized.substring(1);
+        }
+        this.input = normalized;
         this.pos = 0;
         this.line = 1;
         this.lineStartPos = 0;

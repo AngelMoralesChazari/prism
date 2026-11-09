@@ -2,35 +2,39 @@
                PRISM v1.0.0 - GUIA DE INSTALACION
 ===========================================================
 
-REQUISITO PREVIO:
+OPCION RECOMENDADA (INSTALADOR NATIVO CON JAVA INTEGRADO):
+Si descargaste Prism-1.0.0-Setup.exe, ejecutalo y sigue el
+asistente grafico (Siguiente -> Instalar). No requiere
+configuracion manual ni instalar Java por separado.
+
+-----------------------------------------------------------
+OPCION DE PAQUETE ZIP (INSTALADOR GRAFICO INCLUIDO)
+-----------------------------------------------------------
+REQUISITO PREVIO PARA EL PAQUETE ZIP:
 Tener instalado Java (OpenJDK 17 o superior).
 Si no lo tienes, descargalo gratis desde: https://adoptium.net
 
------------------------------------------------------------
 PASO 1: INSTALAR EL LENGUAJE Y COMPILADOR (prc)
------------------------------------------------------------
 1. Haz doble clic en el archivo:
-   install.bat
+   Instalar-Prism-Grafico.bat
+   (Tambien puedes usar install.bat si prefieres consola).
 
-2. Espera a que termine (toma 2 segundos).
+2. En la ventana grafica, deja activada la casilla:
+   "Agregar Prism (prc) al PATH del sistema (Recomendado)"
+   y haz clic en "Instalar ahora >".
+
 3. Abre una nueva ventana de PowerShell o CMD y escribe:
    prc --version
 
-Listo! Ya tienes el compilador disponible en todo tu sistema.
-
 -----------------------------------------------------------
-PASO 2: INSTALAR LA EXTENSION EN VS CODE (SIN COMANDOS)
+PASO 2: INSTALAR LA EXTENSION EN TU IDE (OPCIONAL)
 -----------------------------------------------------------
-1. Abre Visual Studio Code.
-2. Abre la pestana de Extensiones (icono de cuadrados en la
-   barra izquierda o atajo Ctrl + Shift + X).
-3. En la parte superior del panel de Extensiones, haz clic en
-   el icono de los tres puntos (...) situado a la derecha.
-4. Selecciona "Install from VSIX..." (Instalar desde VSIX...).
-5. Selecciona el archivo 'prism-0.3.2.vsix' incluido en esta carpeta.
-
-Listo! Tus archivos .pr tendran coloreado de sintaxis,
-diagnosticos en tiempo real y sugerencias Quick Fix.
+En la carpeta extensions\ encontraras los plugins para:
+- VS Code: extensions\prism-vscode-1.0.2.vsix
+  (Extensiones -> ... -> Install from VSIX...)
+- IntelliJ IDEA: extensions\prism-intellij-1.0.0.zip
+- Eclipse IDE: extensions\prism-eclipse-1.0.0.jar
+- Apache NetBeans: extensions\prism-netbeans-1.0.0.zip
 
 -----------------------------------------------------------
 COMANDOS RAPIDOS PARA PROBAR EN TU TERMINAL:
@@ -42,5 +46,4 @@ COMANDOS RAPIDOS PARA PROBAR EN TU TERMINAL:
   prc compile examples\prueba_nl.pr -d out\
 
 - Ejecutar el programa compilado:
-  java -cp "out;%USERPROFILE%\.prism\lib\prism.jar" prueba_nl
-
+  java -cp "out;%LocalAppData%\Programs\Prism\lib\prism.jar" prueba_nl

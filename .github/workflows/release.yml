@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-linux:
     runs-on: ubuntu-latest
 
     steps:
@@ -29,17 +29,110 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build JAR with Maven
-        run: mvn clean package -DskipTests
+      - name: Build JAR and run smoke tests
+        run: |
+          mvn clean package -DskipTests
+          cp target/prism-*.jar prism.jar
+          mkdir -p extensions/prism/bin dist
+          cp prism.jar extensions/prism/bin/prism.jar
+          java -cp prism.jar prism.PrismRegressionHarness
 
       - name: Package VS Code extension
         working-directory: extensions/prism
-        run: npx @vscode/vsce package --allow-missing-repository
+        run: |
+          cp ../../LICENSE ./LICENSE
+          npx --yes @vscode/vsce package --allow-missing-repository
+
+      - name: Package Linux bundle
+        run: |
+          STAGE=$(mktemp -d)
+          mkdir -p "$STAGE/bin" "$STAGE/examples" "$STAGE/extensions"
+          cp install.sh prism.jar README.md LICENSE "$STAGE/"
+          cp bin/prc "$STAGE/bin/prc"
+          chmod +x "$STAGE/install.sh" "$STAGE/bin/prc"
+          cp examples/*.pr "$STAGE/examples/"
+          cp extensions/prism/*.vsix "$STAGE/extensions/"
+          tar -czf dist/prism-v1.0.0-linux.tar.gz -C "$STAGE" .
+
+      - name: Upload Linux & VS Code artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: prism-linux-artifacts
+          path: |
+            target/prism-*.jar
+            prism.jar
+            extensions/prism/*.vsix
+            dist/prism-v1.0.0-linux.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Ensure Inno Setup 6 is installed
+        shell: pwsh
+        run: |
+          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+          }
+
+      - name: Build Prism-1.0.0-Setup.exe (with integrated jlink runtime)
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -ExecutionPolicy Bypass -File installer\windows\build-installer.ps1
+
+      - name: Verify jlink runtime compiles and executes .pr
+        shell: pwsh
+        run: |
+          .\build\win-runtime\bin\java.exe -cp prism.jar prism.PrismRegressionHarness
+          .\build\win-runtime\bin\java.exe -jar prism.jar compile examples\prueba_nl.pr -d target\smoke_out
+          .\build\win-runtime\bin\java.exe -cp "target\smoke_out;prism.jar" prueba_nl
+
+      - name: Package Windows ZIP bundle (with GUI wizard)
+        shell: pwsh
+        run: |
+          $stage = Join-Path $env:RUNNER_TEMP 'prism-win-stage'
+          New-Item -ItemType Directory -Path "$stage\bin", "$stage\examples", "$stage\installer\windows" -Force | Out-Null
+          Copy-Item Instalar-Prism-Grafico.bat, install.bat, prism.jar, LEEME_INSTALACION.txt, README.md, LICENSE $stage
+          Copy-Item bin\prc.cmd "$stage\bin\"
+          Copy-Item examples\*.pr "$stage\examples\"
+          Copy-Item installer\windows\PrismSetupGUI.ps1, installer\windows\prism.ico, installer\windows\prism-logo.png "$stage\installer\windows\"
+          Compress-Archive -Path "$stage\*" -DestinationPath dist\prism-v1.0.0-windows.zip -Force
+
+      - name: Upload Windows Installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: prism-windows-installer
+          path: |
+            dist/Prism-1.0.0-Setup.exe
+            dist/prism-v1.0.0-windows.zip
+
+  release:
+    needs: [build-linux, build-windows]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Flatten release assets
+        run: |
+          mkdir -p final-release
+          find release-assets -type f -exec cp -v {} final-release/ \;
 
       - name: Upload binaries to Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            target/prism-*.jar
-            extensions/prism/*.vsix
+          files: final-release/*
