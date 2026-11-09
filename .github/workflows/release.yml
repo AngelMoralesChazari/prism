@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -27,12 +27,17 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Build JAR and run smoke tests
         run: |
           mvn clean package -DskipTests
-          cp target/prism-*.jar prism.jar
+          MAIN_JAR=$(find target -maxdepth 1 -name 'prism-*.jar' ! -name '*-sources.jar' | head -n 1)
+          if [ -z "$MAIN_JAR" ]; then
+            echo "No se encontro el JAR principal en target/" >&2
+            exit 1
+          fi
+          cp "$MAIN_JAR" prism.jar
           mkdir -p extensions/prism/bin dist
           cp prism.jar extensions/prism/bin/prism.jar
           java -cp prism.jar prism.PrismRegressionHarness
@@ -72,7 +77,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -83,19 +88,25 @@ jobs:
           $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
           if (-not (Test-Path $iscc)) {
             choco install innosetup -y --no-progress
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
+          Write-Host "Inno Setup encontrado en: $iscc"
 
       - name: Build Prism-1.0.0-Setup.exe (with integrated jlink runtime)
         shell: pwsh
         run: |
-          pwsh -NoProfile -ExecutionPolicy Bypass -File installer\windows\build-installer.ps1
+          .\installer\windows\build-installer.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Verify jlink runtime compiles and executes .pr
         shell: pwsh
         run: |
           .\build\win-runtime\bin\java.exe -cp prism.jar prism.PrismRegressionHarness
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           .\build\win-runtime\bin\java.exe -jar prism.jar compile examples\prueba_nl.pr -d target\smoke_out
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           .\build\win-runtime\bin\java.exe -cp "target\smoke_out;prism.jar" prueba_nl
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Package Windows ZIP bundle (with GUI wizard)
         shell: pwsh

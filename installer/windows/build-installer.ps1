@@ -85,8 +85,9 @@ try {
     }
 
     Write-Host '[3/3] Compilando Prism-1.0.0-Setup.exe con Inno Setup 6...'
+    $isccFromPath = Get-Command 'ISCC.exe' -ErrorAction SilentlyContinue
     $isccCandidates = @(
-        (Get-Command 'ISCC.exe' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -ErrorAction SilentlyContinue),
+        $(if ($isccFromPath) { $isccFromPath.Source }),
         'C:\Program Files (x86)\Inno Setup 6\ISCC.exe',
         'C:\Program Files\Inno Setup 6\ISCC.exe',
         $(if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe' })
