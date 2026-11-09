@@ -5,11 +5,17 @@ import prism.PrismResult;
 import prism.PrismService;
 import prism.ir.LogicExpr;
 import prism.pr.ast.AtomDecl;
+import prism.pr.ast.AtomRef;
+import prism.pr.ast.BinaryExpr;
+import prism.pr.ast.FormulaDecl;
+import prism.pr.ast.FormulaExpr;
 import prism.pr.ast.LetDecl;
 import prism.pr.ast.NlDecl;
+import prism.pr.ast.NotExpr;
 import prism.pr.ast.PrProgram;
 import prism.pr.ast.PrStmt;
 import prism.pr.ast.TextRef;
+import prism.pr.ast.VertautoStmt;
 import prism.vertauto.EvaluadorProposicional;
 import prism.vertauto.ParserNotacionClasica;
 
@@ -174,6 +180,9 @@ public final class PrSemanticLinter {
         return Collections.unmodifiableList(avisos);
     }
 
+    public record ResultadoLet(String contexto, PrismResult traduccion) {
+    }
+
     /**
      * Realiza un pase de linting semántico sobre todo un programa AST.
      */
@@ -198,7 +207,7 @@ public final class PrSemanticLinter {
         }
 
         PrAtomRegistry registry = new PrAtomRegistry(atomEtiquetas);
-        List<String> avisos = new ArrayList<>();
+        List<ResultadoLet> resultados = new ArrayList<>();
 
         for (PrStmt stmt : program.statements()) {
             if (stmt instanceof LetDecl l) {
@@ -210,14 +219,151 @@ public final class PrSemanticLinter {
                         PrismResult res = translateService.traducir(
                                 texto,
                                 registry.toRegistroProposiciones(translateService.getBaseConocimiento()));
-                        avisos.addAll(diagnosticar(contexto, res, registry));
+                        resultados.add(new ResultadoLet(contexto, res));
                     } catch (Exception ignored) {
                     }
                 }
             }
         }
 
+        return diagnosticarResultados(program, resultados, registry);
+    }
+
+    /**
+     * Diagnostica coherencia semántica considerando todas las traducciones y
+     * fórmulas del módulo
+     * para evitar falsos positivos cuando distintos átomos aparecen en diferentes
+     * premisas.
+     */
+    public static List<String> diagnosticarResultados(
+            PrProgram program,
+            List<ResultadoLet> traducciones,
+            PrAtomRegistry atomRegistry) {
+        if (atomRegistry == null || traducciones == null || traducciones.isEmpty()) {
+            return List.of();
+        }
+        Map<String, String> declarados = atomRegistry.mapaSimboloAEtiqueta();
+        if (declarados.isEmpty()) {
+            return List.of();
+        }
+
+        Set<String> atomosEnUso = new LinkedHashSet<>();
+        record ClausulaAuto(String contexto, String simbolo, String clausula) {
+        }
+        List<ClausulaAuto> clausulasAuto = new ArrayList<>();
+
+        for (ResultadoLet rl : traducciones) {
+            PrismResult res = rl.traduccion();
+            if (res == null || !res.isExito()) {
+                continue;
+            }
+            List<String> simbolosEnFormula;
+            try {
+                LogicExpr expr = ParserNotacionClasica.parsear(res.getFormula());
+                simbolosEnFormula = EvaluadorProposicional.recolectarAtomos(expr);
+            } catch (Exception e) {
+                continue;
+            }
+            Set<String> simbolosAuto = new LinkedHashSet<>();
+            for (String sym : simbolosEnFormula) {
+                if (declarados.containsKey(sym)) {
+                    atomosEnUso.add(sym);
+                } else {
+                    simbolosAuto.add(sym);
+                }
+            }
+            for (Map.Entry<String, String> e : res.getProposiciones().entrySet()) {
+                if (simbolosAuto.contains(e.getValue())) {
+                    clausulasAuto.add(new ClausulaAuto(rl.contexto(), e.getValue(), e.getKey()));
+                }
+            }
+        }
+
+        if (program != null) {
+            for (PrStmt stmt : program.statements()) {
+                if (stmt instanceof FormulaDecl f) {
+                    recolectarAtomosEnExpresion(f.expression(), declarados.keySet(), atomosEnUso);
+                } else if (stmt instanceof VertautoStmt v && !v.target().isVariable()) {
+                    recolectarAtomosEnExpresion(v.target().inlineExpression(), declarados.keySet(), atomosEnUso);
+                }
+            }
+        }
+
+        Set<String> atomosHuerfanos = new LinkedHashSet<>();
+        for (String sym : declarados.keySet()) {
+            if (!atomosEnUso.contains(sym)) {
+                atomosHuerfanos.add(sym);
+            }
+        }
+
+        if (atomosHuerfanos.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> avisos = new ArrayList<>();
+        Set<String> autosUsados = new HashSet<>();
+        String contextoFallback = traducciones.get(0).contexto();
+
+        for (String huerfano : atomosHuerfanos) {
+            String etiquetaHuerfano = declarados.get(huerfano);
+            Set<String> tokensHuerfano = extraerTokens(etiquetaHuerfano);
+
+            ClausulaAuto mejor = null;
+            int maxCoincidencias = 0;
+
+            for (ClausulaAuto auto : clausulasAuto) {
+                String claveAuto = auto.contexto() + "#" + auto.simbolo();
+                if (autosUsados.contains(claveAuto)) {
+                    continue;
+                }
+                Set<String> tokensAuto = extraerTokens(auto.clausula());
+                Set<String> interseccion = new LinkedHashSet<>(tokensHuerfano);
+                interseccion.retainAll(tokensAuto);
+                if (interseccion.size() > maxCoincidencias) {
+                    maxCoincidencias = interseccion.size();
+                    mejor = auto;
+                }
+            }
+
+            String ctxMensaje = mejor != null ? mejor.contexto() : contextoFallback;
+            StringBuilder sb = new StringBuilder();
+            sb.append("[Aviso Semántico] El átomo declarado '").append(huerfano)
+                    .append("' (\"").append(etiquetaHuerfano).append("\") no coincide con ninguna cláusula de '")
+                    .append(ctxMensaje).append("'.\n");
+
+            if (mejor != null && maxCoincidencias > 0) {
+                autosUsados.add(mejor.contexto() + "#" + mejor.simbolo());
+                sb.append("   Sugerencia: Se detectó una cláusula no enlazada en el texto: \"")
+                        .append(mejor.clausula()).append("\" (asignada automáticamente al símbolo '")
+                        .append(mejor.simbolo()).append("').\n");
+                sb.append("   --> ¿Quisiste decir: atom ").append(huerfano).append(" = \"")
+                        .append(mejor.clausula()).append("\"?");
+            } else if (!clausulasAuto.isEmpty()) {
+                sb.append("   Proposiciones detectadas en el texto que recibieron símbolos automáticos:\n");
+                for (ClausulaAuto c : clausulasAuto) {
+                    sb.append("   - \"").append(c.clausula()).append("\" (símbolo '").append(c.simbolo())
+                            .append("')\n");
+                }
+            } else {
+                sb.append("   No se detectó ninguna proposición no enlazada en el texto analizado.");
+            }
+            avisos.add(sb.toString());
+        }
+
         return Collections.unmodifiableList(avisos);
+    }
+
+    private static void recolectarAtomosEnExpresion(FormulaExpr expr, Set<String> declarados, Set<String> out) {
+        if (expr instanceof AtomRef a) {
+            if (declarados.contains(a.name())) {
+                out.add(a.name());
+            }
+        } else if (expr instanceof NotExpr n) {
+            recolectarAtomosEnExpresion(n.inner(), declarados, out);
+        } else if (expr instanceof BinaryExpr b) {
+            recolectarAtomosEnExpresion(b.left(), declarados, out);
+            recolectarAtomosEnExpresion(b.right(), declarados, out);
+        }
     }
 
     /**

@@ -10,44 +10,67 @@ public final class PrCheckHarness {
 
     public static void main(String[] args) {
         int fallos = 0;
-        fallos += probarOk("examples/plantilla_ejercicio.pr");
         fallos += probarOk("examples/ejercicio_lluvia.pr");
-        fallos += probarOk("examples/tautologia_estudio.pr");
+        fallos += probarOk("examples/prueba_nl.pr");
+        fallos += probarOk("examples/translate_literal.pr");
+        fallos += probarOk("examples/reglas_inferencia.pr");
+        fallos += probarOk("examples/deteccion_falacias.pr");
+        fallos += probarOk("src/main/resources/prism/core.pr");
         fallos += probarErrorEnFuente(
                 """
-                module m
-                let x = translate(falta)
-                """,
-                "Texto nl no definido"
-        );
+                        module m
+                        let x = translate(falta)
+                        """,
+                "Texto nl no definido");
         fallos += probarErrorEnFuente(
                 """
-                module m
-                formula f = p or q
-                vertauto f
-                """,
-                "Átomo no declarado"
-        );
+                        module m
+                        formula f = p or q
+                        vertauto f
+                        """,
+                "Átomo no declarado");
         fallos += probarErrorEnFuente(
                 """
-                module m
-                atom p = "a"
-                atom p = "b"
-                """,
-                "Redeclaración"
-        );
+                        module m
+                        atom p = "a"
+                        atom p = "b"
+                        """,
+                "Redeclaración");
         fallos += probarErrorEnFuente(
                 """
-                module m
-                vertauto desconocida
-                """,
-                "Fórmula no definida"
-        );
+                        module m
+                        vertauto desconocida
+                        """,
+                "Fórmula no definida");
+        fallos += probarErrorEnFuente(
+                """
+                        module m
+                        atom p = "a"
+                        formula a = b and p
+                        formula b = a or p
+                        """,
+                "Referencia circular");
+        fallos += probarErrorEnFuente(
+                """
+                        module m
+                        atom p = "llueve"
+                        nl texto = "si llueve salgo"
+                        formula f = texto and p
+                        """,
+                "es una variable nl");
+        fallos += probarErrorEnFuente(
+                """
+                        module m
+                        atom p = "llueve"
+                        vertauto (p and z)
+                        """,
+                "Átomo no declarado en 'vertauto inline': z");
+        fallos += probarUbicacionDiagnostico();
         if (fallos > 0) {
             System.err.println("PrCheckHarness: " + fallos + " fallo(s)");
             System.exit(1);
         }
-        System.out.println("PrCheckHarness: OK (7 casos)");
+        System.out.println("PrCheckHarness: OK (14 casos)");
     }
 
     private static int probarOk(String archivo) {
@@ -92,5 +115,26 @@ public final class PrCheckHarness {
             System.err.println("Error inesperado: " + e.getMessage());
             return 1;
         }
+    }
+
+    private static int probarUbicacionDiagnostico() {
+        String fuente = """
+                module diag_test
+                atom p = "uno"
+                nl texto = "si llueve llevo paraguas"
+                formula a = b and p
+                formula b = a impl p
+                formula c = texto or p
+                vertauto (a and z)
+                """;
+        List<PrDiagnostic> diags = PrChecker.diagnosticarFuente(fuente, "diag_test.pr");
+        boolean vioNlEnLinea6 = diags.stream().anyMatch(d -> d.line() == 6 && d.message().contains("'texto' en 'c'"));
+        boolean vioInlineEnLinea7 = diags.stream().anyMatch(d -> d.line() == 7 && d.message().contains("'vertauto inline': z"));
+        boolean vioCicloEnLinea4 = diags.stream().anyMatch(d -> d.line() == 4 && d.message().contains("Referencia circular"));
+        if (!vioNlEnLinea6 || !vioInlineEnLinea7 || !vioCicloEnLinea4) {
+            System.err.println("Ubicaciones inesperadas en diag_test: " + diags);
+            return 1;
+        }
+        return 0;
     }
 }

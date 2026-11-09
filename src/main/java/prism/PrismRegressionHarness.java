@@ -42,6 +42,8 @@ public final class PrismRegressionHarness {
         fallos += verificarLexruleCarga();
         fallos += verificarDosPasadasCompilador();
         fallos += verificarLinterSemantico();
+        fallos += verificarComposicionModular();
+        fallos += verificarRechazoCiclosYNlEnFormula();
 
         List<Caso> casos = new ArrayList<>();
         casos.add(new Caso("si_entonces", "si llueve entonces llevo paraguas", true, "(p " + IMP + " q)"));
@@ -216,6 +218,66 @@ public final class PrismRegressionHarness {
                 "Si el token expira muy rapidamente, entonces el cortafuegos bloquea la peticion de manera automatica.",
                 true,
                 "(p " + IMP + " q)"));
+        casos.add(new Caso(
+                "argumento_modus_ponens_nl",
+                "Si llueve entonces la calle se moja; llueve; por lo tanto la calle se moja.",
+                true,
+                "(((p " + IMP + " q) " + AND + " p) " + IMP + " q)"));
+        casos.add(new Caso(
+                "argumento_modus_tollens_nl",
+                "Si llueve entonces la calle se moja; la calle no se moja; por lo tanto no llueve.",
+                true,
+                "(((p " + IMP + " q) " + AND + " \u00acq) " + IMP + " \u00acp)"));
+        casos.add(new Caso(
+                "argumento_modus_ponens_coma_y",
+                "Si estudio apruebo, y estudio, por consiguiente apruebo",
+                true,
+                "(((p " + IMP + " q) " + AND + " p) " + IMP + " q)"));
+        casos.add(new Caso(
+                "argumento_modus_tollens_punto_luego",
+                "Si llueve entonces la calle se moja. No es verdad que la calle se moje, luego no llueve",
+                true,
+                "(((p " + IMP + " q) " + AND + " \u00acq) " + IMP + " \u00acp)"));
+        casos.add(new Caso(
+                "argumento_silogismo_hipotetico_nl",
+                "Si estudio entonces aprendo; si aprendo entonces apruebo; por lo tanto si estudio entonces apruebo.",
+                true,
+                "(((p " + IMP + " q) " + AND + " (q " + IMP + " r)) " + IMP + " (p " + IMP + " r))"));
+        casos.add(new Caso(
+                "argumento_silogismo_disyuntivo_coma",
+                "Estudio o trabajo, no estudio; por lo tanto trabajo",
+                true,
+                "(((p " + OR + " q) " + AND + " \u00acp) " + IMP + " q)"));
+        casos.add(new Caso(
+                "argumento_silogismo_disyuntivo_doble_o",
+                "O estudio o trabajo; no estudio; en consecuencia trabajo",
+                true,
+                "(((p " + OR + " q) " + AND + " \u00acp) " + IMP + " q)"));
+        casos.add(new Caso(
+                "argumento_silogismo_disyuntivo_o_bien",
+                "O bien estudio o bien descanso; no estudio; por lo tanto descanso",
+                true,
+                "(((p " + OR + " q) " + AND + " \u00acp) " + IMP + " q)"));
+        casos.add(new Caso(
+                "de_morgan_conclusivo_subjuntivo",
+                "No es verdad que llueva o duerma; por lo tanto no llueve y no duerme.",
+                true,
+                "(\u00ac((p " + OR + " q)) " + IMP + " (\u00acp " + AND + " \u00acq))"));
+        casos.add(new Caso(
+                "contraposicion_asi_que",
+                "Si el servidor falla entonces la base de datos se detiene; as\u00ed que si la base de datos no se detiene entonces el servidor no falla.",
+                true,
+                "((p " + IMP + " q) " + IMP + " (\u00acq " + IMP + " \u00acp))"));
+        casos.add(new Caso(
+                "falacia_afirmacion_consecuente_nl",
+                "Si llueve entonces la calle se moja; la calle se moja; por lo tanto llueve.",
+                true,
+                "(((p " + IMP + " q) " + AND + " q) " + IMP + " p)"));
+        casos.add(new Caso(
+                "falacia_negacion_antecedente_nl",
+                "Si llueve entonces la calle se moja; no llueve; por lo tanto la calle no se moja.",
+                true,
+                "(((p " + IMP + " q) " + AND + " \u00acp) " + IMP + " \u00acq)"));
         casos.add(new Caso("vacio", "", false, ""));
         casos.add(new Caso("solo_espacios", "   \t  ", false, ""));
 
@@ -368,6 +430,89 @@ public final class PrismRegressionHarness {
             System.err.println("FALLO [linter_programa_ast_exc]: " + e.getMessage());
         }
 
+        return fallos;
+    }
+
+    private static int verificarComposicionModular() {
+        int fallos = 0;
+        String codigo = "module test_modular\n"
+                + "use core\n"
+                + "formula mp = (regla and p) impl q\n"
+                + "formula cadena = mp and not neg_q\n"
+                + "atom p = \"llueve\"\n"
+                + "atom q = \"la calle se moja\"\n"
+                + "let regla = translate(\"Si llueve entonces la calle se moja.\")\n"
+                + "let neg_q = translate(\"La calle no se moja.\")\n"
+                + "let extra_a = translate(\"Si hace frio entonces uso abrigo.\")\n"
+                + "let extra_b = translate(\"Uso abrigo.\")\n"
+                + "let extra_c = translate(\"Hace frio.\")\n"
+                + "vertauto mp { verdict }\n"
+                + "vertauto ((extra_a and extra_b) impl extra_c) { verdict }\n";
+        try {
+            prism.pr.ast.PrProgram program = prism.pr.PrParser.parse(codigo);
+            List<String> errores = prism.pr.PrValidator.validar(program);
+            if (!errores.isEmpty()) {
+                fallos++;
+                System.err.println("FALLO [modular_validador]: " + errores);
+            }
+            List<String> avisos = prism.pr.PrSemanticLinter.diagnosticarPrograma(program, new PrismService());
+            if (!avisos.isEmpty()) {
+                fallos++;
+                System.err.println("FALLO [modular_linter_sin_falsos_positivos]: se esperaban 0 avisos, obtuvo: " + avisos);
+            }
+            java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+            var originalOut = System.out;
+            try {
+                System.setOut(new java.io.PrintStream(buffer, true, StandardCharsets.UTF_8));
+                new prism.pr.PrInterpreter().ejecutar(program);
+            } finally {
+                System.setOut(originalOut);
+            }
+            String salida = buffer.toString(StandardCharsets.UTF_8);
+            if (!salida.contains("(((p " + IMP + " q) " + AND + " p) " + IMP + " q)  tautology")) {
+                fallos++;
+                System.err.println("FALLO [modular_mp_salida]:\n" + salida);
+            }
+            if (!salida.contains("contingency")) {
+                fallos++;
+                System.err.println("FALLO [modular_falacia_auto_salida]:\n" + salida);
+            }
+        } catch (Exception e) {
+            fallos++;
+            System.err.println("FALLO [modular_exc]: " + e.getMessage());
+        }
+        return fallos;
+    }
+
+    private static int verificarRechazoCiclosYNlEnFormula() {
+        int fallos = 0;
+        String codigo = "module test_ciclos\n"
+                + "atom p = \"llueve\"\n"
+                + "nl texto = \"si llueve salgo\"\n"
+                + "formula a = b and p\n"
+                + "formula b = a or p\n"
+                + "formula c = not c\n"
+                + "formula d = texto impl p\n"
+                + "vertauto (texto and z)\n";
+        prism.pr.ast.PrProgram program = prism.pr.PrParser.parse(codigo);
+        List<String> errores = prism.pr.PrValidator.validar(program);
+        String todos = String.join("\n", errores);
+        if (!todos.contains("Referencia circular en la definición de la fórmula 'a'")) {
+            fallos++;
+            System.err.println("FALLO [ciclo_mutuo]: " + errores);
+        }
+        if (!todos.contains("Referencia circular en la definición de la fórmula 'c'")) {
+            fallos++;
+            System.err.println("FALLO [autociclo]: " + errores);
+        }
+        if (!todos.contains("es una variable nl")) {
+            fallos++;
+            System.err.println("FALLO [nl_en_formula]: " + errores);
+        }
+        if (!todos.contains("Átomo no declarado en 'vertauto inline': z")) {
+            fallos++;
+            System.err.println("FALLO [vertauto_inline_atomo]: " + errores);
+        }
         return fallos;
     }
 

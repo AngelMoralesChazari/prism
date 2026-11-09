@@ -83,15 +83,61 @@ Si eres estudiante o docente y **solo quieres usar el lenguaje** sin programar e
 2. Descarga el archivo **`prism.jar`**.
 3. *(Requiere tener instalado Java 17 o superior).*
 
-### 2. Ejecuta tus programas
+### 2. Ejecuta o compila tus programas
 * **Ejecutar un script:**
   ```bash
+  prc run tu_programa.pr
+  # o directamente con Java:
   java -jar prism.jar run tu_programa.pr
   ```
-* **Verificar sintaxis (sin ejecutar):**
+* **Verificar sintaxis y referencias (sin ejecutar):**
   ```bash
+  prc check tu_programa.pr
+  # o con Java:
   java -jar prism.jar check tu_programa.pr
   ```
+* **Compilar a bytecode JVM (`.class`):**
+  ```bash
+  prc compile tu_programa.pr -d target/out
+  ```
+
+---
+
+## Novedades v1.1: Argumentos multipremisa, leyes lógicas y detección de falacias
+
+Prism permite formalizar **argumentos completos en español** y **componer fórmulas de manera modular**:
+
+1. **Argumentos multipremisa y conectores conclusivos en `nl` / `translate`:**
+   - Delimitadores de premisas: `; `, `. `, `, pero `, `, sin embargo `, `, y ` (equilibrado para no partir condicionales abiertos) y coma entre premisas independientes.
+   - Conectores conclusivos de nivel superior (`(Premisas) → Conclusión`): `por lo tanto`, `por consiguiente`, `en consecuencia`, `así que`, `así pues` y `luego` precedido de puntuación (`; luego`, `, luego`, `. luego`).
+   - Flexión verbal automática en subjuntivo/indicativo dentro de argumentos (por ejemplo, `no es verdad que llueva o la calle se moje; por lo tanto no llueve y la calle no se moja`).
+
+2. **Composición modular entre `let`, `formula` y `atom`:**
+   - Dentro de cualquier `formula` o `vertauto (...)` puedes combinar `atom`s, variables `let` obtenidas con `translate(...)` y otras `formula`s, incluyendo referencias hacia adelante (*two-pass*), manteniendo la detección estática de ciclos y el linter semántico unificado.
+
+```pr
+module reglas_inferencia
+use core
+
+atom p = "llueve"
+atom q = "la calle se moja"
+
+# Enfoque modular: reutilizar premisas traducidas dentro de formula
+let regla = translate("Si llueve entonces la calle se moja.")
+let hecho = translate("Llueve.")
+formula modus_ponens = (regla and hecho) impl q
+vertauto modus_ponens { verdict }
+
+# Enfoque directo en español puro: argumento completo con varias premisas
+let silogismo = translate("Si estudio entonces aprendo; si aprendo entonces apruebo; por lo tanto si estudio entonces apruebo.")
+vertauto silogismo { table verdict }
+
+# Detección de falacias: afirmación del consecuente -> contingency
+let falacia = translate("Si llueve entonces la calle se moja; la calle se moja; por lo tanto llueve.")
+vertauto falacia { steps table verdict }
+```
+
+Consulta los ejemplos completos en [`examples/reglas_inferencia.pr`](examples/reglas_inferencia.pr) y [`examples/deteccion_falacias.pr`](examples/deteccion_falacias.pr).
 
 ### 3. Extensión oficial para Visual Studio Code / Cursor
 Para tener **coloreado de sintaxis**, **snippets** y autocompletado:

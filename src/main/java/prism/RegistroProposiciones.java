@@ -9,7 +9,8 @@ import java.util.Set;
 import nlp.lexicon.NormalizadorMorfologico;
 
 /**
- * Asigna símbolos {@code p, q, r, …} a fragmentos de texto normalizados de forma estable en una sola traducción.
+ * Asigna símbolos {@code p, q, r, …} a fragmentos de texto normalizados de
+ * forma estable en una sola traducción.
  */
 public final class RegistroProposiciones {
     private static final char SIMBOLOS[] = "pqrstuvwxyzabcdefghijklmno".toCharArray();
@@ -37,7 +38,7 @@ public final class RegistroProposiciones {
             return flexivo;
         }
 
-        String simbolo = siguienteSimbolo(claveASimbolo.size());
+        String simbolo = siguienteSimboloDisponible(claveASimbolo.size());
         claveASimbolo.put(clave, simbolo);
         if (pasosDeAnalisis != null) {
             pasosDeAnalisis.add("Nueva proposición: " + simbolo + " = \"" + clave + "\"");
@@ -79,7 +80,8 @@ public final class RegistroProposiciones {
     }
 
     /**
-     * Pre-registra un átomo declarado en fuente {@code .pr}: el símbolo {@code p} y su etiqueta NL.
+     * Pre-registra un átomo declarado en fuente {@code .pr}: el símbolo {@code p} y
+     * su etiqueta NL.
      */
     public void registrarAtomoDeclarado(String simbolo, String etiquetaNl) {
         String sym = simbolo.trim();
@@ -96,6 +98,17 @@ public final class RegistroProposiciones {
         if (formaCanonica != null && !formaCanonica.isBlank()) {
             claveASimbolo.put(formaCanonica.trim(), simbolo.trim());
             claveASimbolo.put(formaCanonica.trim().toLowerCase(), simbolo.trim());
+        }
+    }
+
+    private String siguienteSimboloDisponible(int indiceInicial) {
+        int indice = indiceInicial;
+        while (true) {
+            String candidato = siguienteSimbolo(indice);
+            if (!claveASimbolo.containsValue(candidato)) {
+                return candidato;
+            }
+            indice++;
         }
     }
 

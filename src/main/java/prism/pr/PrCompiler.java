@@ -97,15 +97,19 @@ public final class PrCompiler {
         String module = program.moduleName();
         StringBuilder sb = new StringBuilder();
 
-        sb.append("// Código generado automáticamente por Prism Compiler (prc) v1.0.0\n");
+        sb.append("// Código generado automáticamente por Prism Compiler (prc) v1.1.0\n");
         sb.append("// Módulo: ").append(module).append(".pr\n\n");
         sb.append("import prism.pr.PrInterpreter;\n\n");
 
         sb.append("public final class ").append(module).append(" {\n\n");
         sb.append("    public static void main(String[] args) {\n");
         sb.append("        String fuente = \"\"\"\n");
-        sb.append(originalSource.replace("\"\"\"", "\\\"\\\"\\\""));
-        if (!originalSource.endsWith("\n")) {
+        String fuenteSegura = originalSource
+                .replace("\r\n", "\n")
+                .replace("\\", "\\\\")
+                .replace("\"\"\"", "\\\"\\\"\\\"");
+        sb.append(fuenteSegura);
+        if (!fuenteSegura.endsWith("\n")) {
             sb.append("\n");
         }
         sb.append("\"\"\";\n");

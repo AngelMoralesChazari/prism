@@ -1,0 +1,45 @@
+module deteccion_falacias
+
+use core
+
+atom p = "llueve"
+atom q = "la calle se moja"
+
+# ------------------------------------------------------------
+# 1. Falacia de Afirmación del Consecuente (español puro)
+# Forma: ((p -> q) /\ q) -> p  (Contingencia: existe contraejemplo)
+# ------------------------------------------------------------
+nl argumento_consecuente = "Si llueve entonces la calle se moja; la calle se moja; por lo tanto llueve."
+let falacia_consecuente = translate(argumento_consecuente)
+
+vertauto falacia_consecuente {
+    steps
+    table
+    verdict
+}
+
+# ------------------------------------------------------------
+# 2. Falacia de Negación del Antecedente (composición modular)
+# Forma: ((p -> q) /\ !p) -> !q  (Contingencia: existe contraejemplo)
+# ------------------------------------------------------------
+let regla = translate("Si llueve entonces la calle se moja.")
+let no_llueve = translate("No llueve.")
+let no_moja = translate("La calle no se moja.")
+
+formula falacia_antecedente = (regla and no_llueve) impl no_moja
+
+vertauto falacia_antecedente {
+    table
+    verdict
+}
+
+# ------------------------------------------------------------
+# 3. Falsa conversión de implicación en español puro
+# Forma: (r -> s) -> (s -> r)  (Contingencia: no es ley lógica)
+# ------------------------------------------------------------
+let falsa_conversion = translate("Si estudio entonces apruebo; por lo tanto si apruebo entonces estudio.")
+
+vertauto falsa_conversion {
+    verdict
+}
+

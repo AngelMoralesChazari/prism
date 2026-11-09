@@ -1,0 +1,77 @@
+module reglas_inferencia
+
+use core
+
+# Átomos declarados y reutilizables en reglas modulares y lenguaje natural
+atom p = "llueve"
+atom q = "la calle se moja"
+
+# ------------------------------------------------------------
+# 1. Reglas de inferencia con composición modular (let + formula)
+# ------------------------------------------------------------
+nl texto_regla = "Si llueve entonces la calle se moja."
+let regla = translate(texto_regla)
+let hecho = translate("Llueve.")
+let calle_seca = translate("La calle no se moja.")
+
+# Modus Ponens: ((p -> q) /\ p) -> q
+formula modus_ponens = (regla and hecho) impl q
+
+vertauto modus_ponens {
+    steps
+    table
+    verdict
+}
+
+# Modus Tollens: ((p -> q) /\ !q) -> !p
+formula modus_tollens = (regla and calle_seca) impl not p
+
+vertauto modus_tollens {
+    verdict
+}
+
+# ------------------------------------------------------------
+# 2. Demostraciones directas en español puro (nl + translate)
+# ------------------------------------------------------------
+
+# Modus Ponens directo en una sola oración argumentativa
+let modus_ponens_nl = translate("Si llueve entonces la calle se moja; llueve; por lo tanto la calle se moja.")
+vertauto modus_ponens_nl {
+    verdict
+}
+
+# Modus Tollens directo en una sola oración argumentativa
+let modus_tollens_nl = translate("Si llueve entonces la calle se moja; la calle no se moja; por lo tanto no llueve.")
+vertauto modus_tollens_nl {
+    verdict
+}
+
+# Ley de Contraposición: (p -> q) <-> (!q -> !p)
+let contraposicion = translate("Si llueve entonces la calle se moja si y solo si si la calle no se moja entonces no llueve.")
+vertauto contraposicion {
+    verdict
+}
+
+# Leyes de De Morgan en español
+let de_morgan_1 = translate("No es verdad que llueva o la calle se moje; por lo tanto no llueve y la calle no se moja.")
+vertauto de_morgan_1 {
+    verdict
+}
+
+let de_morgan_2 = translate("No es verdad que llueva y la calle se moje si y solo si no llueve o la calle no se moja.")
+vertauto de_morgan_2 {
+    verdict
+}
+
+# Silogismo Hipotético con dos premisas y conclusión
+let silogismo_hipotetico = translate("Si estudio entonces aprendo; si aprendo entonces apruebo; por lo tanto si estudio entonces apruebo.")
+vertauto silogismo_hipotetico {
+    table
+    verdict
+}
+
+# Silogismo Disyuntivo en español
+let silogismo_disyuntivo = translate("Estudio o trabajo; no estudio; por lo tanto trabajo.")
+vertauto silogismo_disyuntivo {
+    verdict
+}

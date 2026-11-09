@@ -15,12 +15,17 @@ import prism.pr.ast.TextRef;
 import prism.pr.ast.TranslateCall;
 import prism.pr.ast.VertautoStmt;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Análisis estático de programas {@code .ls}: módulos, redeclaraciones y referencias.
+ * Análisis estático de programas {@code .ls}: módulos, redeclaraciones y
+ * referencias.
  */
 public final class PrValidator {
 
@@ -37,8 +42,11 @@ public final class PrValidator {
         Set<String> atomos = new HashSet<>();
         Set<String> textosNl = new HashSet<>();
         Set<String> formulas = new HashSet<>();
+        Set<String> formulasDeclaradas = new LinkedHashSet<>();
+        Map<String, Set<String>> dependenciasFormula = new LinkedHashMap<>();
 
-        // Pase 1: Registrar identificadores y recolectar catálogo de átomos, textos y fórmulas
+        // Pase 1: Registrar identificadores y recolectar catálogo de átomos, textos y
+        // fórmulas
         for (PrStmt stmt : program.statements()) {
             if (stmt instanceof AtomDecl) {
                 AtomDecl a = (AtomDecl) stmt;
@@ -56,24 +64,37 @@ public final class PrValidator {
                 FormulaDecl f = (FormulaDecl) stmt;
                 registrarIdentificador(f.name(), "formula", identificadores, errores);
                 formulas.add(f.name());
+                formulasDeclaradas.add(f.name());
             }
         }
 
-        // Pase 2: Validar expresiones lógicas y referencias con el catálogo completo disponible
+        // Pase 2: Validar expresiones lógicas y referencias con el catálogo completo
+        // disponible
         for (PrStmt stmt : program.statements()) {
             if (stmt instanceof LetDecl) {
                 LetDecl l = (LetDecl) stmt;
                 validarTranslate(l.translate(), textosNl, errores);
             } else if (stmt instanceof FormulaDecl) {
                 FormulaDecl f = (FormulaDecl) stmt;
-                validarAtomosEnFormula(f.name(), f.expression(), atomos, errores);
+                validarReferenciasEnFormula(f.name(), f.expression(), atomos, formulas, textosNl, errores);
+                Set<String> deps = new LinkedHashSet<>();
+                for (String ref : atomosEn(f.expression())) {
+                    if (formulasDeclaradas.contains(ref)) {
+                        deps.add(ref);
+                    }
+                }
+                dependenciasFormula.computeIfAbsent(f.name(), k -> new LinkedHashSet<>()).addAll(deps);
             } else if (stmt instanceof VertautoStmt) {
                 VertautoStmt v = (VertautoStmt) stmt;
-                validarVertauto(v.target(), formulas, atomos, errores);
+                validarVertauto(v.target(), formulas, atomos, textosNl, errores);
             } else if (!(stmt instanceof AtomDecl) && !(stmt instanceof NlDecl)) {
                 errores.add("Sentencia no contemplada: " + stmt.getClass().getSimpleName());
             }
         }
+
+        // Pase 3: Detectar dependencias circulares entre definiciones formula
+        detectarCiclosEnFormulas(dependenciasFormula, errores);
+
         return List.copyOf(errores);
     }
 
@@ -102,7 +123,8 @@ public final class PrValidator {
 
     public static void validarArchivoConvencion(String ruta, String moduleName, List<String> errores) {
         String nombreArchivo = java.nio.file.Path.of(ruta).getFileName().toString();
-        if (!nombreArchivo.endsWith(".pr") || nombreArchivo.startsWith("prism_check_") || nombreArchivo.startsWith("prism_lint_")) {
+        if (!nombreArchivo.endsWith(".pr") || nombreArchivo.startsWith("prism_check_")
+                || nombreArchivo.startsWith("prism_lint_")) {
             return;
         }
         String esperado = nombreArchivo.substring(0, nombreArchivo.length() - 3);
@@ -116,8 +138,7 @@ public final class PrValidator {
             String nombre,
             String tipo,
             Set<String> identificadores,
-            List<String> errores
-    ) {
+            List<String> errores) {
         if (!identificadores.add(nombre)) {
             errores.add("Redeclaración de identificador '" + nombre + "' (" + tipo + ")");
         }
@@ -137,32 +158,82 @@ public final class PrValidator {
             FormulaRef target,
             Set<String> formulas,
             Set<String> atomos,
-            List<String> errores
-    ) {
+            Set<String> textosNl,
+            List<String> errores) {
         if (target.isVariable()) {
             if (!formulas.contains(target.variableName())) {
                 errores.add("Fórmula no definida en vertauto: " + target.variableName());
             }
             return;
         }
-        validarAtomosEnFormula("vertauto inline", target.inlineExpression(), atomos, errores);
+        validarReferenciasEnFormula("vertauto inline", target.inlineExpression(), atomos, formulas, textosNl, errores);
     }
 
-    private static void validarAtomosEnFormula(
+    private static void validarReferenciasEnFormula(
             String contexto,
             FormulaExpr expr,
             Set<String> atomos,
-            List<String> errores
-    ) {
-        for (String atomo : atomosEn(expr)) {
-            if (!atomos.contains(atomo)) {
-                errores.add("Átomo no declarado en '" + contexto + "': " + atomo);
+            Set<String> formulas,
+            Set<String> textosNl,
+            List<String> errores) {
+        for (String ident : atomosEn(expr)) {
+            if (atomos.contains(ident) || formulas.contains(ident)) {
+                continue;
+            }
+            if (textosNl.contains(ident)) {
+                errores.add("Identificador '" + ident + "' en '" + contexto
+                        + "' es una variable nl (texto) y no puede usarse directamente en una fórmula; usa translate primero");
+            } else {
+                errores.add("Átomo no declarado en '" + contexto + "': " + ident);
             }
         }
     }
 
+    private static void detectarCiclosEnFormulas(
+            Map<String, Set<String>> grafo,
+            List<String> errores) {
+        Map<String, Integer> estado = new HashMap<>(); // 0 = no visitado, 1 = visitando, 2 = completado
+        List<String> pila = new ArrayList<>();
+        Set<String> reportados = new HashSet<>();
+
+        for (String nodo : grafo.keySet()) {
+            if (estado.getOrDefault(nodo, 0) == 0) {
+                dfsCiclo(nodo, grafo, estado, pila, reportados, errores);
+            }
+        }
+    }
+
+    private static void dfsCiclo(
+            String actual,
+            Map<String, Set<String>> grafo,
+            Map<String, Integer> estado,
+            List<String> pila,
+            Set<String> reportados,
+            List<String> errores) {
+        estado.put(actual, 1);
+        pila.add(actual);
+
+        for (String vecino : grafo.getOrDefault(actual, Set.of())) {
+            int estVecino = estado.getOrDefault(vecino, 0);
+            if (estVecino == 1) {
+                int idxInicio = pila.indexOf(vecino);
+                List<String> ciclo = new ArrayList<>(pila.subList(idxInicio, pila.size()));
+                ciclo.add(vecino);
+                if (reportados.add(vecino)) {
+                    errores.add("Referencia circular en la definición de la fórmula '"
+                            + vecino + "': " + String.join(" -> ", ciclo));
+                }
+            } else if (estVecino == 0) {
+                dfsCiclo(vecino, grafo, estado, pila, reportados, errores);
+            }
+        }
+
+        pila.remove(pila.size() - 1);
+        estado.put(actual, 2);
+    }
+
     private static Set<String> atomosEn(FormulaExpr expr) {
-        Set<String> nombres = new HashSet<>();
+        Set<String> nombres = new LinkedHashSet<>();
         recolectarAtomos(expr, nombres);
         return nombres;
     }
