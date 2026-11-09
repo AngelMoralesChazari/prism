@@ -73,7 +73,7 @@ try {
         Write-Host '[2/3] Generando runtime JVM minimo (jlink)...'
         New-Item -ItemType Directory -Path (Split-Path -Parent $runtimeDir) -Force | Out-Null
         & $jlinkCmd.Source `
-            --add-modules 'java.base,java.compiler,jdk.compiler' `
+            --add-modules 'java.base,java.compiler,jdk.compiler,jdk.zipfs,jdk.charsets' `
             --strip-debug `
             --no-man-pages `
             --no-header-files `
