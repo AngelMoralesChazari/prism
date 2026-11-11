@@ -1,0 +1,47 @@
+===========================================================
+             PRISM v1.1.0 - INSTALACION EN macOS
+===========================================================
+
+OPCION 1 (RECOMENDADA): INSTALADOR GRAFICO NATIVO (.pkg / .dmg)
+-----------------------------------------------------------
+1. Si descargaste el archivo .dmg, abrelo y haz doble clic en
+   "Instalar Prism.pkg". Si descargaste el .pkg directamente,
+   haz doble clic sobre el archivo .pkg.
+2. Sigue el asistente grafico oficial de macOS:
+   Introduccion -> Licencia -> Instalar -> Resumen.
+3. No necesitas instalar Java por separado si usaste el paquete
+   con runtime integrado (arm64 para Apple Silicon o x64 para Intel).
+4. Al terminar, abre Terminal o VS Code y verifica:
+     prc --version
+
+NOTA SOBRE GATEKEEPER EN macOS (PAQUETE SIN FIRMA DE APPLE):
+-----------------------------------------------------------
+Si macOS muestra el aviso:
+  "No se puede abrir porque Apple no puede verificar si contiene
+   software malicioso" (o "desarrollador no identificado"):
+1. Haz clic en "Aceptar" o "Cancelar" en ese aviso.
+2. Abre Ajustes del Sistema -> Privacidad y seguridad.
+3. Baja hasta la seccion "Seguridad" y haz clic en
+   "Abrir de todas formas" junto a Prism-1.1.0-macOS...pkg.
+4. Escribe tu contraseña (o Touch ID) y el asistente grafico abrira
+   de forma normal.
+
+OPCION 2: PAQUETE PORTATIL (.tar.gz)
+-----------------------------------------------------------
+Requiere Java OpenJDK 17 o superior instalado (https://adoptium.net
+o via Homebrew: brew install openjdk@17).
+- Haz doble clic en "Instalar-Prism-Grafico.command" para usar el
+  asistente grafico, o ejecuta "./install.sh" en Terminal.
+
+COMANDOS RAPIDOS DE PRUEBA:
+-----------------------------------------------------------
+  prc --version
+  prc run /Library/Prism/examples/prueba_nl.pr
+  prc compile /Library/Prism/examples/reglas_inferencia.pr -d ./out
+  java -cp "./out:/Library/Prism/lib/prism.jar" reglas_inferencia
+
+DESINSTALAR:
+-----------------------------------------------------------
+- Abre /Library/Prism/Desinstalar Prism.command con doble clic, o
+- Ejecuta en Terminal: sudo /Library/Prism/uninstall.sh
+

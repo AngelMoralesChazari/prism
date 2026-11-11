@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>Prism ${VERSION}</title>
+    <organization>com.absoftwaregroup</organization>
+    <options customize="allow" require-scripts="false" rootVolumeOnly="true" hostArchitectures="${HOST_ARCHS}"/>
+    <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
+
+    <background file="background.png" mime-type="image/png" alignment="bottomleft" scaling="none"/>
+    <background-darkAqua file="background-dark.png" mime-type="image/png" alignment="bottomleft" scaling="none"/>
+
+    <welcome file="welcome.html" mime-type="text/html"/>
+    <license file="LICENSE.txt" mime-type="text/plain"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
+
+    <choices-outline>
+        <line choice="choice.core"/>
+        <line choice="choice.examples"/>
+    </choices-outline>
+
+    <choice id="choice.core"
+            title="Compilador y Runtime de Prism (prc)"
+            description="Instala prc, prism.jar, configuración global del PATH y ${RUNTIME_DESC} en /Library/Prism."
+            enabled="false"
+            selected="true">
+        <pkg-ref id="com.absoftwaregroup.prism.core"/>
+    </choice>
+
+    <choice id="choice.examples"
+            title="Ejemplos oficiales (.pr)"
+            description="Instala archivos de ejemplo de lógica proposicional, reglas de inferencia y detección de falacias en /Library/Prism/examples."
+            enabled="true"
+            selected="true">
+        <pkg-ref id="com.absoftwaregroup.prism.examples"/>
+    </choice>
+
+    <pkg-ref id="com.absoftwaregroup.prism.core" version="${VERSION}" onConclusion="none">prism-core.pkg</pkg-ref>
+    <pkg-ref id="com.absoftwaregroup.prism.examples" version="${VERSION}" onConclusion="none">prism-examples.pkg</pkg-ref>
+</installer-gui-script>
+

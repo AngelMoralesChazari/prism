@@ -1,0 +1,51 @@
+#!/bin/bash
+set -e
+
+TARGET_ROOT="${2%/}"
+if [ -z "$TARGET_ROOT" ] || [ "$TARGET_ROOT" = "/" ]; then
+    TARGET_ROOT="/Library/Prism"
+fi
+
+# Asegurar permisos ejecutables de Prism y su runtime JVM integrado
+chmod 755 "$TARGET_ROOT"
+chmod 755 "$TARGET_ROOT/bin"
+chmod 755 "$TARGET_ROOT/bin/prc"
+
+if [ -f "$TARGET_ROOT/lib/prism.jar" ]; then
+    chmod 644 "$TARGET_ROOT/lib/prism.jar"
+fi
+
+if [ -f "$TARGET_ROOT/uninstall.sh" ]; then
+    chmod 755 "$TARGET_ROOT/uninstall.sh"
+fi
+
+if [ -f "$TARGET_ROOT/Desinstalar Prism.command" ]; then
+    chmod 755 "$TARGET_ROOT/Desinstalar Prism.command"
+fi
+
+if [ -d "$TARGET_ROOT/runtime" ]; then
+    if [ -d "$TARGET_ROOT/runtime/bin" ]; then
+        chmod 755 "$TARGET_ROOT/runtime/bin/"* 2>/dev/null || true
+    fi
+    if [ -f "$TARGET_ROOT/runtime/lib/jspawnhelper" ]; then
+        chmod 755 "$TARGET_ROOT/runtime/lib/jspawnhelper"
+    fi
+fi
+
+# Registrar acceso global en /usr/local/bin/prc (estandar en macOS)
+mkdir -p /usr/local/bin
+ln -sf "$TARGET_ROOT/bin/prc" /usr/local/bin/prc
+
+# Registrar /etc/paths.d/prism para zsh, bash, Terminal, iTerm2 y VS Code
+mkdir -p /etc/paths.d
+printf '%s\n' "$TARGET_ROOT/bin" > /etc/paths.d/prism
+chmod 644 /etc/paths.d/prism
+
+# Limpiar atributo de cuarentena en los binarios instalados (si aplica)
+if command -v xattr >/dev/null 2>&1; then
+    xattr -dr com.apple.quarantine "$TARGET_ROOT" 2>/dev/null || true
+    xattr -d com.apple.quarantine /usr/local/bin/prc 2>/dev/null || true
+fi
+
+exit 0
+

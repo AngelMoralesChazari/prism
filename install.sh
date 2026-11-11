@@ -1,32 +1,69 @@
 #!/usr/bin/env bash
-# Script de instalacion universal de Prism (prc) v1.0.0
+# Script de instalacion universal de Prism (prc) v1.1.0 (Linux y macOS)
 # Disenado para integrar prc en el PATH del sistema para cualquier IDE o terminal.
 set -e
 
+OS_NAME="$(uname -s)"
+
 echo "======================================================="
-echo "       INSTALADOR OFICIAL DE PRISM (prc) v1.0.0        "
+echo "       INSTALADOR OFICIAL DE PRISM (prc) v1.1.0        "
 echo "======================================================="
 echo ""
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # 1. Resolver ejecutable de Java
-JAVA_BIN=""
-if command -v java >/dev/null 2>&1; then
-    JAVA_BIN="java"
-elif [ -n "$JAVA_HOME" ] && [ -x "$JAVA_HOME/bin/java" ]; then
-    JAVA_BIN="$JAVA_HOME/bin/java"
-else
-    for cand in /usr/lib/jvm/*/bin/java /usr/java/*/bin/java "$HOME"/.sdkman/candidates/java/current/bin/java "$HOME"/.asdf/shims/java; do
+resolve_java_bin() {
+    if [ -x "$SCRIPT_DIR/runtime/bin/java" ]; then
+        printf '%s\n' "$SCRIPT_DIR/runtime/bin/java"
+        return 0
+    fi
+    if [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+        printf '%s\n' "$JAVA_HOME/bin/java"
+        return 0
+    fi
+    if [ "$OS_NAME" = "Darwin" ] && [ -x "/usr/libexec/java_home" ]; then
+        local mac_jh=""
+        mac_jh="$(/usr/libexec/java_home -v 17+ 2>/dev/null || /usr/libexec/java_home 2>/dev/null || true)"
+        if [ -n "$mac_jh" ] && [ -x "$mac_jh/bin/java" ]; then
+            printf '%s\n' "$mac_jh/bin/java"
+            return 0
+        fi
+    fi
+    if command -v java >/dev/null 2>&1; then
+        local cmd_java
+        cmd_java="$(command -v java)"
+        if [ "$OS_NAME" != "Darwin" ] || "$cmd_java" -version >/dev/null 2>&1; then
+            printf '%s\n' "$cmd_java"
+            return 0
+        fi
+    fi
+    local cand
+    for cand in \
+        /Library/Java/JavaVirtualMachines/*/Contents/Home/bin/java \
+        /opt/homebrew/opt/openjdk*/bin/java \
+        /usr/local/opt/openjdk*/bin/java \
+        /usr/lib/jvm/*/bin/java \
+        /usr/java/*/bin/java \
+        "$HOME"/.sdkman/candidates/java/current/bin/java \
+        "$HOME"/.asdf/shims/java; do
         if [ -x "$cand" ]; then
-            JAVA_BIN="$cand"
-            break
+            printf '%s\n' "$cand"
+            return 0
         fi
     done
-fi
+    return 1
+}
 
+JAVA_BIN="$(resolve_java_bin || true)"
 if [ -z "$JAVA_BIN" ]; then
     echo "[ERROR] No se encontro Java en el sistema." >&2
     echo "Prism requiere Java (OpenJDK 17 o superior)." >&2
-    echo "En Linux puedes instalarlo con: sudo apt install default-jdk  (o sudo dnf install java-latest-openjdk)" >&2
+    if [ "$OS_NAME" = "Darwin" ]; then
+        echo "En macOS puedes instalarlo desde https://adoptium.net o con: brew install openjdk@17" >&2
+    else
+        echo "En Linux puedes instalarlo con: sudo apt install default-jdk  (o sudo dnf install java-latest-openjdk)" >&2
+    fi
     exit 1
 fi
 
@@ -34,7 +71,6 @@ JAVA_VERSION=$("$JAVA_BIN" -version 2>&1 | head -n 1)
 echo "[OK] Java detectado: $JAVA_VERSION"
 
 # 2. Localizar archivo prism.jar del paquete
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_JAR="$SCRIPT_DIR/prism.jar"
 if [ ! -f "$SOURCE_JAR" ]; then
     SOURCE_JAR="$SCRIPT_DIR/lib/prism.jar"
@@ -45,97 +81,172 @@ if [ ! -f "$SOURCE_JAR" ]; then
     exit 1
 fi
 
-# 3. Determinar instalacion: a nivel de sistema (/opt y /usr/local/bin) o de usuario (~/.prism)
+# 3. Determinar instalacion: a nivel de sistema o de usuario (~/.prism)
 if [ "$EUID" -eq 0 ]; then
-    INSTALL_ROOT="/opt/prism"
+    if [ "$OS_NAME" = "Darwin" ]; then
+        INSTALL_ROOT="/Library/Prism"
+    else
+        INSTALL_ROOT="/opt/prism"
+    fi
     BIN_DIR="/usr/local/bin"
     LIB_DIR="$INSTALL_ROOT/lib"
+    LAUNCHER_DIR="$INSTALL_ROOT/bin"
     IS_SYSTEM=1
 else
     INSTALL_ROOT="$HOME/.prism"
     BIN_DIR="$INSTALL_ROOT/bin"
     LIB_DIR="$INSTALL_ROOT/lib"
+    LAUNCHER_DIR="$BIN_DIR"
     IS_SYSTEM=0
 fi
 
-mkdir -p "$LIB_DIR" "$BIN_DIR"
+mkdir -p "$LIB_DIR" "$BIN_DIR" "$LAUNCHER_DIR"
 cp "$SOURCE_JAR" "$LIB_DIR/prism.jar"
 echo "[OK] Runtime instalado en $LIB_DIR/prism.jar"
 
-# 4. Crear ejecutable lanzador prc
-cat << 'EOF' > "$BIN_DIR/prc"
-#!/usr/bin/env bash
-# Lanzador oficial del lenguaje Prism
-
-# Resolver ubicacion del runtime
-if [ -f "/opt/prism/lib/prism.jar" ]; then
-    PRISM_JAR="/opt/prism/lib/prism.jar"
-elif [ -f "$HOME/.prism/lib/prism.jar" ]; then
-    PRISM_JAR="$HOME/.prism/lib/prism.jar"
-else
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    PRISM_JAR="$SCRIPT_DIR/../lib/prism.jar"
+# Si viene un runtime jlink integrado junto al paquete, copiarlo tambien
+if [ -d "$SCRIPT_DIR/runtime" ]; then
+    rm -rf "$INSTALL_ROOT/runtime"
+    cp -R "$SCRIPT_DIR/runtime" "$INSTALL_ROOT/runtime"
+    chmod +x "$INSTALL_ROOT/runtime/bin/"* 2>/dev/null || true
+    [ -f "$INSTALL_ROOT/runtime/lib/jspawnhelper" ] && chmod +x "$INSTALL_ROOT/runtime/lib/jspawnhelper"
+    echo "[OK] Runtime Java integrado copiado en $INSTALL_ROOT/runtime"
 fi
 
-if [ ! -f "$PRISM_JAR" ]; then
-    echo "[ERROR] No se encontro el runtime de Prism en $PRISM_JAR" >&2
+# 4. Crear ejecutable lanzador prc
+cat << 'EOF' > "$LAUNCHER_DIR/prc"
+#!/usr/bin/env bash
+# Lanzador oficial del lenguaje Prism
+set -e
+
+resolve_script_dir() {
+    local source="${BASH_SOURCE[0]}"
+    while [ -L "$source" ]; do
+        local dir
+        dir="$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)"
+        local target
+        target="$(readlink "$source")"
+        if [[ "$target" != /* ]]; then
+            source="$dir/$target"
+        else
+            source="$target"
+        fi
+    done
+    cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd
+}
+
+SCRIPT_DIR="$(resolve_script_dir)"
+PRISM_HOME="$(cd -P "$SCRIPT_DIR/.." && pwd)"
+
+if [ -f "$PRISM_HOME/lib/prism.jar" ]; then
+    PRISM_JAR="$PRISM_HOME/lib/prism.jar"
+elif [ -f "/Library/Prism/lib/prism.jar" ]; then
+    PRISM_HOME="/Library/Prism"
+    PRISM_JAR="/Library/Prism/lib/prism.jar"
+elif [ -f "/opt/prism/lib/prism.jar" ]; then
+    PRISM_HOME="/opt/prism"
+    PRISM_JAR="/opt/prism/lib/prism.jar"
+elif [ -f "$HOME/.prism/lib/prism.jar" ]; then
+    PRISM_HOME="$HOME/.prism"
+    PRISM_JAR="$HOME/.prism/lib/prism.jar"
+else
+    echo "[ERROR] No se encontro el runtime de Prism (prism.jar)." >&2
     exit 1
 fi
 
-# Resolver comando java
-JAVA_CMD="java"
-if ! command -v java >/dev/null 2>&1; then
-    if [ -n "$JAVA_HOME" ] && [ -x "$JAVA_HOME/bin/java" ]; then
-        JAVA_CMD="$JAVA_HOME/bin/java"
-    else
-        for cand in /usr/lib/jvm/*/bin/java /usr/java/*/bin/java "$HOME"/.sdkman/candidates/java/current/bin/java; do
-            if [ -x "$cand" ]; then
-                JAVA_CMD="$cand"
-                break
-            fi
-        done
+JAVA_CMD=""
+if [ -x "$PRISM_HOME/runtime/bin/java" ]; then
+    JAVA_CMD="$PRISM_HOME/runtime/bin/java"
+elif [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+    JAVA_CMD="$JAVA_HOME/bin/java"
+elif [ "$(uname -s)" = "Darwin" ] && [ -x "/usr/libexec/java_home" ]; then
+    MAC_JH="$(/usr/libexec/java_home -v 17+ 2>/dev/null || /usr/libexec/java_home 2>/dev/null || true)"
+    [ -n "$MAC_JH" ] && [ -x "$MAC_JH/bin/java" ] && JAVA_CMD="$MAC_JH/bin/java"
+fi
+
+if [ -z "$JAVA_CMD" ] && command -v java >/dev/null 2>&1; then
+    CMD_JAVA="$(command -v java)"
+    if [ "$(uname -s)" != "Darwin" ] || "$CMD_JAVA" -version >/dev/null 2>&1; then
+        JAVA_CMD="$CMD_JAVA"
     fi
 fi
 
-exec "$JAVA_CMD" -jar "$PRISM_JAR" "$@"
+if [ -z "$JAVA_CMD" ]; then
+    for cand in \
+        /Library/Java/JavaVirtualMachines/*/Contents/Home/bin/java \
+        /opt/homebrew/opt/openjdk*/bin/java \
+        /usr/local/opt/openjdk*/bin/java \
+        /usr/lib/jvm/*/bin/java \
+        /usr/java/*/bin/java \
+        "$HOME"/.sdkman/candidates/java/current/bin/java \
+        "$HOME"/.asdf/shims/java; do
+        if [ -x "$cand" ]; then
+            JAVA_CMD="$cand"
+            break
+        fi
+    done
+fi
+
+if [ -z "$JAVA_CMD" ]; then
+    echo "[ERROR] No se encontro Java OpenJDK 17 o superior." >&2
+    exit 1
+fi
+
+exec "$JAVA_CMD" -Dfile.encoding=UTF-8 -jar "$PRISM_JAR" "$@"
 EOF
-chmod +x "$BIN_DIR/prc"
+chmod +x "$LAUNCHER_DIR/prc"
+if [ "$LAUNCHER_DIR" != "$BIN_DIR" ]; then
+    ln -sf "$LAUNCHER_DIR/prc" "$BIN_DIR/prc"
+fi
 echo "[OK] Lanzador 'prc' configurado con permisos de ejecucion."
 
 # 5. Integracion global al PATH del sistema operativo (para todos los IDEs y terminales)
 if [ "$IS_SYSTEM" -eq 1 ]; then
-    # Sistema global
-    echo 'export PATH="/usr/local/bin:$PATH"' > /etc/profile.d/prism.sh
-    chmod +x /etc/profile.d/prism.sh
-    echo "[OK] Agregado a /etc/profile.d/prism.sh para todas las terminales e IDEs del sistema."
+    if [ "$OS_NAME" = "Darwin" ]; then
+        mkdir -p /etc/paths.d
+        printf '%s\n' "$INSTALL_ROOT/bin" "/usr/local/bin" > /etc/paths.d/prism
+        chmod 644 /etc/paths.d/prism
+        echo "[OK] Agregado a /etc/paths.d/prism para todas las terminales e IDEs de macOS."
+    else
+        mkdir -p /etc/profile.d
+        echo 'export PATH="/usr/local/bin:$PATH"' > /etc/profile.d/prism.sh
+        chmod +x /etc/profile.d/prism.sh
+        echo "[OK] Agregado a /etc/profile.d/prism.sh para todas las terminales e IDEs del sistema."
+    fi
 else
-    # Intento en /usr/local/bin (el directorio estandar que todo IDE y terminal lee siempre)
-    if [ -w "/usr/local/bin" ]; then
-        ln -sf "$BIN_DIR/prc" "/usr/local/bin/prc"
+    # Intento en /usr/local/bin (cuando ya existe o tiene permisos de escritura)
+    if [ -d "/usr/local/bin" ] && [ -w "/usr/local/bin" ]; then
+        ln -sf "$LAUNCHER_DIR/prc" "/usr/local/bin/prc"
         echo "[OK] Enlazado en /usr/local/bin/prc (accesible globalmente)."
-    elif command -v sudo >/dev/null 2>&1; then
-        echo "Solicitando acceso para enlazar en /usr/local/bin/prc (permite que cualquier IDE lo detecte sin configurar nada)..."
-        sudo ln -sf "$BIN_DIR/prc" "/usr/local/bin/prc" 2>/dev/null && echo "[OK] Enlazado en /usr/local/bin/prc globalmente." || true
+    elif [ -t 0 ] && command -v sudo >/dev/null 2>&1 && [ -d "/usr/local/bin" ]; then
+        echo "Solicitando acceso para enlazar en /usr/local/bin/prc (opcional)..."
+        sudo ln -sf "$LAUNCHER_DIR/prc" "/usr/local/bin/prc" 2>/dev/null && echo "[OK] Enlazado en /usr/local/bin/prc globalmente." || true
     fi
 
     # Enlace en ~/.local/bin
     mkdir -p "$HOME/.local/bin"
-    ln -sf "$BIN_DIR/prc" "$HOME/.local/bin/prc"
+    ln -sf "$LAUNCHER_DIR/prc" "$HOME/.local/bin/prc"
 
-    # Integracion con systemd environment.d (para que entornos graficos e IDEs como IntelliJ/NetBeans/VS Code lean el PATH)
-    mkdir -p "$HOME/.config/environment.d" 2>/dev/null || true
-    if [ -d "$HOME/.config/environment.d" ]; then
-        echo 'PATH=$HOME/.prism/bin:$HOME/.local/bin:$PATH' > "$HOME/.config/environment.d/10-prism.conf"
-        echo "[OK] PATH configurado para el entorno grafico (systemd / IDEs)."
+    # En macOS (Apple Silicon / zsh por defecto), crear ~/.zshrc si no existe
+    if [ "$OS_NAME" = "Darwin" ] && [ ! -f "$HOME/.zshrc" ]; then
+        touch "$HOME/.zshrc"
     fi
 
-    # Integracion en shells (.zshrc, .bashrc, .profile)
-    for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile"; do
+    if [ "$OS_NAME" != "Darwin" ]; then
+        mkdir -p "$HOME/.config/environment.d" 2>/dev/null || true
+        if [ -d "$HOME/.config/environment.d" ]; then
+            echo 'PATH=$HOME/.prism/bin:$HOME/.local/bin:$PATH' > "$HOME/.config/environment.d/10-prism.conf"
+            echo "[OK] PATH configurado para el entorno grafico (systemd / IDEs)."
+        fi
+    fi
+
+    # Integracion en shells (.zshrc, .zprofile, .bashrc, .bash_profile, .profile)
+    for rc in "$HOME/.zshrc" "$HOME/.zprofile" "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.profile"; do
         if [ -f "$rc" ]; then
             if ! grep -q '\.prism/bin' "$rc"; then
                 echo '' >> "$rc"
                 echo '# Prism Language CLI' >> "$rc"
-                echo 'export PATH="$HOME/.prism/bin:$HOME/.local/bin:/usr/local/bin:$PATH"' >> "$rc"
+                printf 'export PATH="$HOME/.prism/bin:$HOME/.local/bin:/usr/local/bin:$PATH"\n' >> "$rc"
                 echo "[OK] PATH registrado en $(basename "$rc")."
             fi
         fi
@@ -148,7 +259,7 @@ echo "       INSTALACION COMPLETADA EXITOSAMENTE             "
 echo "======================================================="
 echo ""
 echo "El compilador y runtime de Prism ya esta instalado."
-echo "Para verificar en tu terminal actual ejecuta:"
+echo "Para verificar en una nueva terminal ejecuta:"
 echo "  prc --version"
 echo ""
 echo "Comandos disponibles:"

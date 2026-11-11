@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+EXAMPLES_DIR="${2%/}"
+if [ -z "$EXAMPLES_DIR" ] || [ "$EXAMPLES_DIR" = "/" ]; then
+    EXAMPLES_DIR="/Library/Prism/examples"
+fi
+
+if [ -d "$EXAMPLES_DIR" ]; then
+    chmod 755 "$EXAMPLES_DIR"
+    find "$EXAMPLES_DIR" -type f -exec chmod 644 {} +
+    if command -v xattr >/dev/null 2>&1; then
+        xattr -dr com.apple.quarantine "$EXAMPLES_DIR" 2>/dev/null || true
+    fi
+fi
+
+exit 0
+

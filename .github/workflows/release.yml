@@ -127,8 +127,45 @@ jobs:
             dist/Prism-1.0.0-Setup.exe
             dist/prism-v1.0.0-windows.zip
 
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build macOS graphical installer (.pkg / .dmg + jlink runtime)
+        run: |
+          chmod +x bin/prc install.sh installer/macos/*.sh installer/macos/*.command installer/macos/scripts/core/postinstall installer/macos/scripts/examples/postinstall
+          ./installer/macos/build-installer.sh
+          ./installer/macos/build-installer.sh --skip-build-jar --universal --skip-dmg --skip-tar
+
+      - name: Verify macOS jlink runtime compiles and executes .pr
+        run: |
+          ./build/macos-runtime/bin/java -cp prism.jar prism.PrismRegressionHarness
+          ./build/macos-runtime/bin/java -cp prism.jar prism.vertauto.VertautoHarness
+          ./build/macos-runtime/bin/java -cp prism.jar prism.pr.PrInterpreterHarness
+          ./build/macos-runtime/bin/java -cp prism.jar prism.pr.PrCheckHarness
+          ./build/macos-runtime/bin/java -jar prism.jar compile examples/prueba_nl.pr -d target/smoke_out
+          ./build/macos-runtime/bin/java -cp "target/smoke_out:prism.jar" prueba_nl
+
+      - name: Upload macOS Installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: prism-macos-installer
+          path: |
+            dist/*.pkg
+            dist/*.dmg
+            dist/*-macos.tar.gz
+
   release:
-    needs: [build-linux, build-windows]
+    needs: [build-linux, build-windows, build-macos]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 

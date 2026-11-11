@@ -1,13 +1,29 @@
 #!/usr/bin/env bash
-# Prism Compiler & Runtime Launcher (prc) v1.0.0
+# Prism Compiler & Runtime Launcher (prc) v1.1.0
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PRISM_HOME="$(cd "$SCRIPT_DIR/.." && pwd)"
+resolve_script_dir() {
+    local source="${BASH_SOURCE[0]}"
+    while [ -L "$source" ]; do
+        local dir
+        dir="$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)"
+        local target
+        target="$(readlink "$source")"
+        if [[ "$target" != /* ]]; then
+            source="$dir/$target"
+        else
+            source="$target"
+        fi
+    done
+    cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd
+}
 
-JAR_PATH="$PRISM_HOME/prism.jar"
+SCRIPT_DIR="$(resolve_script_dir)"
+PRISM_HOME="$(cd -P "$SCRIPT_DIR/.." && pwd)"
+
+JAR_PATH="$PRISM_HOME/lib/prism.jar"
 if [ ! -f "$JAR_PATH" ]; then
-    JAR_PATH="$PRISM_HOME/lib/prism.jar"
+    JAR_PATH="$PRISM_HOME/prism.jar"
 fi
 
 if [ ! -f "$JAR_PATH" ]; then
@@ -15,5 +31,63 @@ if [ ! -f "$JAR_PATH" ]; then
     exit 1
 fi
 
-exec java -jar "$JAR_PATH" "$@"
+resolve_java() {
+    # 1. Runtime Java integrado (instalador standalone)
+    if [ -x "$PRISM_HOME/runtime/bin/java" ]; then
+        printf '%s\n' "$PRISM_HOME/runtime/bin/java"
+        return 0
+    fi
 
+    # 2. JAVA_HOME explícito
+    if [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+        printf '%s\n' "$JAVA_HOME/bin/java"
+        return 0
+    fi
+
+    # 3. En macOS, consultar java_home (evita el stub /usr/bin/java cuando no hay JDK)
+    if [ "$(uname -s)" = "Darwin" ] && [ -x "/usr/libexec/java_home" ]; then
+        local mac_jh=""
+        mac_jh="$(/usr/libexec/java_home -v 17+ 2>/dev/null || /usr/libexec/java_home 2>/dev/null || true)"
+        if [ -n "$mac_jh" ] && [ -x "$mac_jh/bin/java" ]; then
+            printf '%s\n' "$mac_jh/bin/java"
+            return 0
+        fi
+    fi
+
+    # 4. java en PATH (verificando que realmente responda en macOS)
+    if command -v java >/dev/null 2>&1; then
+        local cmd_java
+        cmd_java="$(command -v java)"
+        if [ "$(uname -s)" != "Darwin" ] || "$cmd_java" -version >/dev/null 2>&1; then
+            printf '%s\n' "$cmd_java"
+            return 0
+        fi
+    fi
+
+    # 5. Rutas estándar de JDK en macOS y Linux
+    local cand
+    for cand in \
+        /Library/Java/JavaVirtualMachines/*/Contents/Home/bin/java \
+        /opt/homebrew/opt/openjdk*/bin/java \
+        /usr/local/opt/openjdk*/bin/java \
+        /usr/lib/jvm/*/bin/java \
+        /usr/java/*/bin/java \
+        "$HOME"/.sdkman/candidates/java/current/bin/java \
+        "$HOME"/.asdf/shims/java; do
+        if [ -x "$cand" ]; then
+            printf '%s\n' "$cand"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+JAVA_CMD="$(resolve_java || true)"
+if [ -z "$JAVA_CMD" ]; then
+    echo "Error: No se encontró Java OpenJDK 17 o superior en el sistema." >&2
+    echo "Instálalo desde https://adoptium.net o usa el instalador completo de Prism." >&2
+    exit 1
+fi
+
+exec "$JAVA_CMD" -Dfile.encoding=UTF-8 -jar "$JAR_PATH" "$@"
